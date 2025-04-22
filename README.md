@@ -41,7 +41,7 @@ npm or yarn package manager
 MongoDB database (for storing task data)
 Installation
 Clone the repository:
-git clone https://github.com/yourusername/tasktrek.git
+git clone https://github.com/Goldexcool/tasktrek.git
 cd tasktrek
 npm install
 # or
