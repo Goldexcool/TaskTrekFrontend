@@ -1,0 +1,291 @@
+/* Advanced styles for TaskTrek Board Page */
+
+/* Futuristic glass-like panel effect */
+.glassPanel {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.darkGlassPanel {
+  backdrop-filter: blur(8px);
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Grid pattern for background elements */
+.gridPattern {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+/* Dot pattern overlay */
+.dotPattern {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Circuit board pattern overlay */
+.circuitPattern {
+  background-color: transparent;
+  background-image: linear-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.15) 1px, transparent 1px),
+    linear-gradient(rgba(99, 102, 241, 0.05) 0.5px, transparent 0.5px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.05) 0.5px, transparent 0.5px);
+  background-size: 32px 32px, 32px 32px, 8px 8px, 8px 8px;
+}
+
+/* Flowing gradient animation */
+.flowingGradient {
+  background: linear-gradient(-45deg, #4f46e5, #6366f1, #818cf8, #4f46e5);
+  background-size: 400% 400%;
+  animation: gradientFlow 15s ease infinite;
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glow effects */
+.glowText {
+  text-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+.glowBox {
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+}
+
+.pulseGlow {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+/* Board elements styling */
+.columnHeader {
+  backdrop-filter: blur(4px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.cardHoverEffect {
+  transition: all 0.2s ease;
+}
+
+.cardHoverEffect:hover {
+  transform: translateY(-2px);
+}
+
+/* Task priority indicators with custom styling */
+.priorityIndicator {
+  height: 4px;
+  width: 32px;
+  border-radius: 2px;
+  margin-right: 6px;
+}
+
+.priorityLow {
+  background: linear-gradient(to right, #60a5fa, #3b82f6);
+}
+
+.priorityMedium {
+  background: linear-gradient(to right, #34d399, #10b981);
+}
+
+.priorityHigh {
+  background: linear-gradient(to right, #fbbf24, #f59e0b);
+}
+
+.priorityCritical {
+  background: linear-gradient(to right, #f87171, #ef4444);
+  animation: criticalPulse 2s infinite;
+}
+
+@keyframes criticalPulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+/* Dashboard elements */
+.statCard {
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+}
+
+/* Scrollbar styling */
+.customScroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.5) rgba(0, 0, 0, 0.05);
+}
+
+.customScroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.customScroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.customScroll::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.5);
+  border-radius: 3px;
+}
+
+/* Loading animations */
+.loadingShimmer {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: shimmerAnimation 1.5s infinite;
+}
+
+@keyframes shimmerAnimation {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Task progress bar styling */
+.progressBarContainer {
+  height: 4px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(to right, #4f46e5, #818cf8);
+  transition: width 0.5s ease-out;
+}
+
+/* Responsive layouts */
+@media (max-width: 768px) {
+  .boardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .boardControls {
+    margin-top: 12px;
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Dark mode enhancements */
+.darkModePattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Minimalist view mode */
+.minimalistCard {
+  border: none;
+  box-shadow: none;
+  padding: 8px;
+  background: transparent;
+}
+
+/* Board view transitions */
+.viewTransition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Futuristic neon accents */
+.neonBorder {
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3), 
+              inset 0 0 8px rgba(99, 102, 241, 0.2);
+}
+
+/* Column drag indicator */
+.dropIndicator {
+  height: 2px;
+  margin: 8px 0;
+  background: #4f46e5;
+  border-radius: 1px;
+  animation: pulseIndicator 1.5s infinite;
+}
+
+@keyframes pulseIndicator {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* Highlight dragging states */
+.dragging {
+  opacity: 0.6;
+}
+
+/* Highlight drop areas */
+.dropArea {
+  background-color: rgba(99, 102, 241, 0.05);
+  border: 2px dashed rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+}
+
+/* Task status indicators */
+.statusDot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.statusPending {
+  background-color: #f59e0b;
+}
+
+.statusInProgress {
+  background-color: #3b82f6;
+  animation: statusPulse 2s infinite;
+}
+
+.statusCompleted {
+  background-color: #10b981;
+}
+
+.statusBlocked {
+  background-color: #ef4444;
+}
+
+@keyframes statusPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}

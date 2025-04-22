@@ -1,0 +1,9 @@
+export { default as AddIcon } from './add.svg';
+export { default as EditIcon } from './edit.svg';
+export { default as DeleteIcon } from './delete.svg';
+export { default as CheckIcon } from './check.svg';
+export { default as CloseIcon } from './close.svg';
+export { default as UserIcon } from './user.svg';
+export { default as TeamIcon } from './team.svg';
+export { default as BoardIcon } from './board.svg';
+export { default as TaskIcon } from './task.svg';
