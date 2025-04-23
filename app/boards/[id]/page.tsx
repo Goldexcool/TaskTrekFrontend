@@ -442,6 +442,7 @@ const BoardPage: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [showMembersSheet, setShowMembersSheet] = useState<boolean>(false);
   const [membersTab, setMembersTab] = useState<'active'>('active');
+  const [showTeamSheet, setShowTeamSheet] = useState(false);
 
   // UI state hooks
   const [viewMode, setViewMode] = useState<BoardViewMode>(BoardViewMode.Cards);
@@ -486,6 +487,10 @@ const BoardPage: React.FC = () => {
     memberActivity: {} as Record<string, number>,
   });
   
+  // Add these variables to track owner/admin status
+  const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   // Set up sensors for drag and drop
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -537,6 +542,42 @@ const BoardPage: React.FC = () => {
     
     return '';
   };
+
+  // Add this function to check if current user is owner or admin of the team
+  const checkUserPermissions = useCallback(() => {
+    if (!user || !board || !board.team) return;
+    
+    const teamId = typeof board.team === 'string' ? board.team : board.team._id;
+    
+    if (!teamId) return;
+    
+    // Try to fetch team details to check permissions
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${apiUrl}/teams/${teamId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        const teamData = data.data || data;
+        
+        // Check if user is owner
+        const ownerId = typeof teamData.owner === 'string' ? teamData.owner : teamData.owner?._id;
+        setIsOwner(user._id === ownerId);
+        
+        // Check if user is admin
+        const userMember = teamData.members?.find((member: any) => {
+          const memberId = typeof member.user === 'string' ? member.user : member.user?._id;
+          return user._id === memberId;
+        });
+        
+        setIsAdmin(userMember?.role === 'admin' || user._id === ownerId);
+      })
+      .catch(error => {
+        console.error('Error checking user permissions:', error);
+      });
+  }, [user, board, accessToken]);
 
   // Fetch board data
   const fetchBoardData = useCallback(async () => {
@@ -674,12 +715,12 @@ const BoardPage: React.FC = () => {
 
   // Fetch team members
   const fetchTeamMembers = async () => {
-    if (!board) return;
-    
-    const teamId = getTeamId(board);
-    if (!teamId) return;
-    
     try {
+      if (!board) return;
+      
+      const teamId = getTeamId(board);
+      if (!teamId) return;
+      
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${apiUrl}/teams/${teamId}/members`, {
         headers: {
@@ -687,11 +728,19 @@ const BoardPage: React.FC = () => {
         }
       });
       
-      if (!response.ok) throw new Error('Failed to fetch team members');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch team members: ${response.status}`);
+      }
       
       const data = await response.json();
+      
       if (data.success && Array.isArray(data.data)) {
         setTeamMembers(data.data);
+      } else if (Array.isArray(data)) {
+        setTeamMembers(data);
+      } else {
+        console.warn('Unexpected team members response format:', data);
+        setTeamMembers([]);
       }
     } catch (error) {
       console.error('Error fetching team members:', error);
@@ -1017,52 +1066,34 @@ const BoardPage: React.FC = () => {
     }
   };
 
+  // Function to handle task assignment using the specific API endpoint
   const handleAssignTask = async (taskId: string, userId: string | null) => {
-    // Find which column contains this task
-    let sourceColumnId: string | undefined;
-    let taskToAssign: any = null;
-    
-    Object.entries(tasks).forEach(([colId, colTasks]) => {
-      const typedTasks = colTasks as any[];
-      const task = typedTasks.find(t => t._id === taskId);
-      if (task) {
-        sourceColumnId = colId;
-        taskToAssign = task;
-      }
-    });
-    
-    if (!sourceColumnId || !taskToAssign) {
-      toast({
-        title: "Error",
-        description: "Task not found",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     try {
+      // Find the current assignment state
+      let currentlyAssigned = null;
+      Object.values(tasks).forEach((columnTasks: any[]) => {
+        const task = columnTasks.find(t => t._id === taskId);
+        if (task) {
+          currentlyAssigned = task.assignedTo;
+        }
+      });
+      
+      // If task is already in the desired state, don't make the API call
+      if (currentlyAssigned === userId) {
+        return; // Already in the requested state
+      }
+      
       // Show loading toast
       toast({
         title: userId ? "Assigning task..." : "Removing assignment...",
         variant: "loading"
       });
       
-      // First update the store (optimistic update)
-      updateTaskInStore(taskId, { assignedTo: userId || undefined } as any);
-      
-      // Update selected task if it's currently open in the modal
-      if (selectedTask && selectedTask._id === taskId) {
-        setSelectedTask({
-          ...selectedTask,
-          assignedTo: userId || undefined
-        });
-      }
-      
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       let response;
       
       if (userId) {
-        // Assign task
+        // Use the dedicated assign endpoint
         response = await fetch(`${apiUrl}/tasks/${taskId}/assign`, {
           method: 'PATCH',
           headers: {
@@ -1072,87 +1103,73 @@ const BoardPage: React.FC = () => {
           body: JSON.stringify({ userId })
         });
       } else {
-        // Unassign task
+        // Use the dedicated unassign endpoint
         response = await fetch(`${apiUrl}/tasks/${taskId}/unassign`, {
           method: 'PATCH',
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${accessToken}`
           }
         });
       }
       
       if (!response.ok) {
-        // If the specific assign/unassign endpoints fail, try the general update endpoint
-        const fallbackResponse = await fetch(`${apiUrl}/tasks/${taskId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            assignedTo: userId || null
-          })
-        });
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Assignment error response:', errorData);
         
-        if (!fallbackResponse.ok) {
+        // Check if it's just already in the desired state
+        if (errorData?.message?.includes('already') || 
+            errorData?.message?.includes('already unassigned') || 
+            errorData?.message?.includes('already assigned')) {
+          // This isn't a critical error, so just update UI and return
+          console.log('Task is already in the requested assignment state');
+        } else {
           throw new Error(userId ? "Failed to assign task" : "Failed to unassign task");
         }
       }
       
-      // Success message
+      // Update local state
+      // First find which column this task belongs to
+      let sourceColumnId = null;
+      Object.entries(tasks).forEach(([colId, colTasks]) => {
+        if ((colTasks as any[]).some(t => t._id === taskId)) {
+          sourceColumnId = colId;
+        }
+      });
+      
+      if (sourceColumnId) {
+        // Update task in store
+        updateTaskInStore(taskId, { 
+          assignedTo: userId || undefined,
+          assignedAt: userId ? new Date().toISOString() : undefined
+        } as any);
+        
+        // If task details modal is open, update the selected task
+        if (selectedTask && selectedTask._id === taskId) {
+          setSelectedTask({
+            ...selectedTask,
+            assignedTo: userId || undefined,
+            assignedAt: userId ? new Date().toISOString() : undefined
+          } as ExtendedTask);
+        }
+      }
+      
+      // Show success message
       toast({
         title: "Success",
-        description: userId ? "Task assigned successfully" : "Task unassigned",
+        description: userId ? "Task assigned successfully" : "Task unassigned successfully",
         variant: "success"
       });
       
-      // Update activity log
-      const assignedUser = teamMembers.find(m => 
-        m._id === userId || m.user?._id === userId
-      );
-      
-      const assigneeName = assignedUser ? 
-        (assignedUser.name || assignedUser.user?.name || 'team member') :
-        'nobody';
-        
-      setBoardStats(prev => ({
-        ...prev,
-        recentActivity: [
-          {
-            id: `activity-${Date.now()}`,
-            userName: user?.name || 'You',
-            action: userId ? 
-              `assigned a task to ${assigneeName}` : 
-              'unassigned a task',
-            taskName: taskToAssign.title || 'Unknown task',
-            timestamp: new Date().toISOString(),
-          },
-          ...prev.recentActivity
-        ]
-      }));
-      
     } catch (error: any) {
-      console.error('Error assigning task:', error);
+      console.error('Error managing task assignment:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update task assignment",
         variant: "destructive"
       });
-      
-      // Revert optimistic update
-      updateTaskInStore(taskId, { 
-        assignedTo: taskToAssign.assignedTo 
-      } as any);
-      
-      // Refresh column data
-      if (sourceColumnId) {
-        fetchTasksByColumn(sourceColumnId);
-      }
     }
   };
 
-  // Fix handleChangePriority function
   const handleChangePriority = async (taskId: string, priority: 'low' | 'medium' | 'high' | 'critical') => {
     // Declare variables outside try block to make them available in catch
     let localSourceColumnId: string | undefined;
@@ -1407,6 +1424,19 @@ const BoardPage: React.FC = () => {
       fetchBoardData();
     }
   }, [fetchBoardData, boardId, dataFetched, accessToken]);
+
+  useEffect(() => {
+    if (board) {
+      fetchTeamMembers();
+    }
+  }, [board]);
+
+  // Call this function after board loads
+  useEffect(() => {
+    if (board && user) {
+      checkUserPermissions();
+    }
+  }, [board, user, checkUserPermissions]);
 
   // Apply filters and search to tasks
   const getFilteredTasks = (columnId: string): Task[] => {
@@ -2338,6 +2368,13 @@ const BoardPage: React.FC = () => {
             >
               <Info size={16} className="mr-1" /> Board Info
             </button>
+            <Button
+              onClick={() => setShowTeamSheet(true)}
+              variant="outline"
+              className="flex items-center gap-1"
+            >
+              <Users size={16} className="mr-1" /> Team Members
+            </Button>
           </div>
         </div>
 
@@ -2451,8 +2488,186 @@ const BoardPage: React.FC = () => {
           onDeleteTask={handleDeleteTask}
           onMoveTask={handleMoveTaskToColumn}
           tasks={tasks as unknown as Record<string, Task[]>} // Use type assertion here
+          teamMembers={teamMembers}
+          assignedUser={teamMembers.find(member => 
+            member.user?._id === selectedTask.assignedTo || member._id === selectedTask.assignedTo
+          )}
+          handleAssignTask={handleAssignTask}
         />
       )}
+
+      {/* Team Members Sheet */}
+      <Sheet open={showTeamSheet} onOpenChange={setShowTeamSheet}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-indigo-500" />
+              Team Members
+            </SheetTitle>
+            <SheetDescription>
+              Manage team members and task assignments
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="mt-6">
+            {/* Team members list */}
+            <div className="space-y-3">
+              {teamMembers.length > 0 ? (
+                teamMembers.map((member) => {
+                  const memberId = member.user?._id || member._id;
+                  const memberName = member.user?.name || member.name || 'Unknown User';
+                  const memberEmail = member.user?.email || member.email || '';
+                  const memberAvatar = member.user?.avatar || member.avatar;
+                  const memberRole = member.role || 'member';
+                  
+                  // Calculate initials for avatar fallback
+                  const initials = memberName
+                    .split(' ')
+                    .map((part: any[]) => part[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                  
+                  return (
+                    <div 
+                      key={memberId || Math.random().toString()}
+                      className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <Avatar className="h-10 w-10 rounded-full mr-3">
+                          {memberAvatar ? (
+                            <AvatarImage src={memberAvatar} alt={memberName} />
+                          ) : (
+                            <AvatarFallback className="bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                              {initials}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                            {memberName}
+                            {user?._id === memberId && <span className="ml-2 text-xs text-gray-500">(You)</span>}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {memberEmail}
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <Badge
+                          variant={
+                            memberRole === 'owner' 
+                              ? 'default' 
+                              : memberRole === 'admin' 
+                                ? 'secondary' 
+                                : 'outline'
+                          }
+                          className={
+                            memberRole === 'owner'
+                              ? 'bg-blue-500'
+                              : memberRole === 'admin'
+                                ? 'bg-purple-500'
+                                : ''
+                          }
+                        >
+                          {memberRole === 'owner' ? 'Owner' : memberRole === 'admin' ? 'Admin' : 'Member'}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8">
+                  <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+                    <Users className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400">No team members available</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Add member section (for owners/admins) */}
+            {(isOwner || isAdmin) && (
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-3">
+                  Team Management
+                </h3>
+                
+                <div className="flex flex-col space-y-2">
+                  <Button 
+                    onClick={() => {
+                      // Navigate to team page
+                      if (board && board.team) {
+                        const teamId = typeof board.team === 'string' ? board.team : board.team._id;
+                        if (teamId) router.push(`/teams/${teamId}`);
+                      }
+                    }}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Manage Team Members
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => setShowTeamSheet(false)}
+                    variant="ghost"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Task assignment stats */}
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-3">
+                Task Assignment Distribution
+              </h3>
+              
+              <div className="space-y-4">
+                {teamMembers.length > 0 ? (
+                  <div className="space-y-3">
+                    {teamMembers.map(member => {
+                      const memberId = member.user?._id || member._id;
+                      const memberName = member.user?.name || member.name || 'Unknown User';
+                      
+                      // Count tasks assigned to this member
+                      let assignedTaskCount = 0;
+                      Object.values(tasks).forEach((columnTasks: any) => {
+                        assignedTaskCount += columnTasks.filter((task: any) => 
+                          task.assignedTo === memberId
+                        ).length;
+                      });
+                      
+                      // Calculate percentage of total tasks
+                      const totalTasks = Object.values(tasks).reduce((count: number, columnTasks: any) => 
+                        count + columnTasks.length, 0);
+                      const percentage = totalTasks ? Math.round((assignedTaskCount / totalTasks) * 100) : 0;
+                      
+                      return (
+                        <div key={memberId || Math.random().toString()} className="space-y-1">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700 dark:text-gray-300">{memberName}</span>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              {assignedTaskCount} task{assignedTaskCount !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <Progress value={percentage} className="h-2" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No members available to show task distribution
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </AppLayout>
   );
 };

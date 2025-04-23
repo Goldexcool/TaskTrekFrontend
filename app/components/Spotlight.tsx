@@ -1,10 +1,9 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ChevronRight, Users, Layers, Calendar } from 'lucide-react';
+import {  Users, Layers, Calendar } from 'lucide-react';
 import spot1 from '../Images/702.jpg'
 import spot2 from '../Images/people-office-work-day.jpg'
 import spot3 from '../Images/calendar-planner-agenda-schedule-concept.jpg'
@@ -72,13 +71,13 @@ const Spotlight = () => {
                                 </div>
                                 <h3 className="text-xl font-bold text-[#111827] mb-3">{feature.title}</h3>
                                 <p className="text-gray-600 mb-4">{feature.description}</p>
-                                <Link
+                                {/* <Link
                                     href={`/features#${feature.title.toLowerCase().replace(/\s+/g, '-')}`}
                                     className="text-[#6366F1] font-medium flex items-center hover:text-[#4F46E5] transition-colors"
                                 >
                                     Learn more
                                     <ChevronRight size={16} className="ml-1" />
-                                </Link>
+                                </Link> */}
                             </div>
                         </motion.div>
                     ))}

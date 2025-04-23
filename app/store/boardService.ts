@@ -61,6 +61,10 @@ export interface BoardWithColumns extends Board {
   columns: Column[];
 }
 
+export interface BoardApiResponse {
+  data: Board[];
+}
+
 // Fetch board by ID
 export async function fetchBoardById(boardId: string): Promise<Board> {
   try {
@@ -419,33 +423,33 @@ export async function deleteBoard(boardId: string): Promise<void> {
  * Fetch all boards for the current user
  * @returns Array of boards belonging to the user
  */
-export async function fetchUserBoards(): Promise<Board[]> {
+export const fetchUserBoards = async (): Promise<Board[] | BoardApiResponse> => {
   try {
-    const { accessToken } = useAuthStore.getState();
-    
-    if (!accessToken) {
-      throw new Error('Authentication required');
-    }
-    
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    
+    const { accessToken } = useAuthStore.getState();
+
+    if (!accessToken) {
+      console.warn("No access token available for fetching boards");
+      return [];
+    }
+
+    // Make API request
     const response = await fetch(`${apiUrl}/boards`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-      }
+      },
     });
-
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch user boards: ${response.status}`);
+      throw new Error(`Failed to fetch boards: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.data || [];
-  } catch (error: any) {
-    console.error('Error fetching user boards:', error);
-    return [];
+    return data; // Return the raw data to be handled in the component
+  } catch (error) {
+    console.error('Error fetching boards:', error);
+    return []; // Return empty array on error
   }
-}
+};
 
-// Add other API functions as needed

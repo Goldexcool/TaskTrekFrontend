@@ -14,6 +14,7 @@ import {
 import useAuthStore from '../store/useAuthStore';
 import { fetchTeams, Team, deleteTeam } from '../store/teamService';
 import useActivityStore from '../store/activityStore';
+import { useSidebar } from './AppLayout';
 
 type NavItem = {
   name: string;
@@ -36,6 +37,7 @@ interface HeaderDashProps {
 const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
   const pathname = usePathname();
   const router = useRouter();
+  const sidebar = useSidebar();
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -178,6 +180,15 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
     return team.owner === userId;
   });
 
+  const handleMenuClick = () => {
+    console.log("Menu button clicked");
+    if (sidebar && sidebar.toggle) {
+      sidebar.toggle();
+    } else if (onMenuClick) {
+      onMenuClick();
+    }
+  };
+
   return (
     <header className={`fixed top-0 right-0 left-0 z-30 bg-gray-800 ${
       scrolled ? 'shadow-md shadow-black/20' : 'shadow-sm shadow-black/10'
@@ -187,17 +198,18 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <button
+                id="mobile-menu-button"
                 type="button"
                 className="md:hidden inline-flex items-center justify-center p-2 mr-2 rounded-xl text-gray-400 hover:text-[#6366F1] hover:bg-gray-700 focus:outline-none transition-colors"
-                onClick={onMenuClick}
+                onClick={handleMenuClick}
               >
                 <span className="sr-only">Open menu</span>
                 <Menu className="h-6 w-6" aria-hidden="true" />
               </button>
 
               <Link href="/dashboard" className="flex items-center">
-                <div className="h-8 w-8 rounded-xl bg-[#6366F1] flex items-center justify-center">
-                  <span className="text-white text-xl font-bold">T</span>
+                <div className="h-10 w-10 rounded-lg bg-[#6366F1] flex items-center justify-center">
+                  <span className="text-white text-xl P-3 font-bold">TT</span>
                 </div>
                 <span className="ml-2 text-xl font-semibold text-white">TaskTrek</span>
               </Link>

@@ -256,7 +256,7 @@ function BoardsContent() {
       setDeletingBoardId(boardId);
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/boards/${boardId}`, {
+      const response = await fetch(`${apiUrl}/boards/${boardId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -391,7 +391,7 @@ function BoardsContent() {
             <p className="mb-8 text-center max-w-md text-lg">
               You need to be logged in to view and manage your boards
             </p>
-            <Link href="/login">
+            <Link href="/signIn">
               <Button className="bg-blue-600 hover:bg-blue-700">
                 Login to Continue
               </Button>

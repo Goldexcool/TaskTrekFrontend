@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
-import { Clock, Star, Check, CheckCircle } from 'lucide-react';
+import { Clock, Star, Check, CheckCircle, User, ChevronDown, ChevronRight, CircleOff } from 'lucide-react';
 import useCardColorStore, { CARD_COLORS, DEFAULT_COLOR } from '@/app/store/useCardColorStore';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/app/components/ui/dropdown-menu';
 import Draggable from 'react-draggable';
 import { Avatar, AvatarImage, AvatarFallback } from '@/app/components/ui/avatar';
@@ -59,6 +60,9 @@ interface TaskCardProps {
   onChangePriority?: (taskId: string, priority: 'low' | 'medium' | 'high' | 'critical') => void;
   onMoveToColumn?: (taskId: string, destColumnId: string) => void;
   availableColumns?: { id: string, title: string }[];
+  assignedUser?: { avatar?: string; name?: string; user?: { avatar?: string; name?: string } };
+  teamMembers?: { _id?: string; name?: string; avatar?: string; user?: { _id?: string; name?: string; avatar?: string } }[];
+  handleAssignTask?: (taskId: string, memberId: string | null) => void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -71,6 +75,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onChangePriority,
   onMoveToColumn,
   availableColumns = [],
+  assignedUser,
+  teamMembers = [],
+  handleAssignTask,
 }) => {
   // Determine if task is completed (check status field only)
   const isCompleted = task.status === 'completed';
@@ -206,6 +213,108 @@ const TaskCard: React.FC<TaskCardProps> = ({
               {task.priority === 'high' && <Check size={14} className="ml-auto" />}
             </div>
           </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Assigned user dropdown menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="flex items-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            {assignedUser ? (
+              <>
+                <Avatar className="h-5 w-5 mr-1">
+                  <AvatarImage src={assignedUser.avatar || assignedUser.user?.avatar} />
+                  <AvatarFallback>{(assignedUser.name || assignedUser.user?.name || 'U').charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="truncate max-w-[80px]">
+                  {assignedUser.name || assignedUser.user?.name}
+                </span>
+              </>
+            ) : (
+              <>
+                <User className="h-4 w-4 mr-1" />
+                <span>Assign</span>
+              </>
+            )}
+            <ChevronDown className="h-3 w-3 ml-0.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          {/* Assign to submenu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                <User size={14} className="mr-2" /> Assign To
+                <ChevronRight size={14} className="ml-auto" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" className="w-48">
+              {/* Unassigned option */}
+              <DropdownMenuItem 
+                key="unassigned-option"
+                onClick={(e: React.MouseEvent) => { 
+                  e.stopPropagation();
+                  // Check if handleAssignTask exists and if task is assigned
+                  if (handleAssignTask && task.assignedTo) {
+                    handleAssignTask(task._id, null); 
+                  }
+                }}
+              >
+                <div className="flex items-center w-full">
+                  <CircleOff size={14} className="mr-2 text-gray-500" />
+                  <span>Unassigned</span>
+                  {!task.assignedTo && <Check size={14} className="ml-auto" />}
+                </div>
+              </DropdownMenuItem>
+              
+              {/* Divider */}
+              <div className="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+              
+              {/* Team members */}
+              {teamMembers.length > 0 ? (
+                teamMembers.map(member => {
+                  // Handle different API response formats
+                  const memberId = member.user?._id || member._id;
+                  const memberName = member.user?.name || member.name || 'Unknown User';
+                  const memberAvatar = member.user?.avatar || member.avatar;
+                  
+                  // Only check if exactly this member is assigned
+                  const isAssigned = task.assignedTo === memberId;
+                  
+                  return (
+                    <DropdownMenuItem
+                      key={`member-${memberId || Math.random().toString()}`}
+                      onClick={(e: React.MouseEvent) => { 
+                        e.stopPropagation(); 
+                        // Only call API if selecting a different member AND handleAssignTask exists
+                        if (handleAssignTask && task.assignedTo !== memberId && memberId) {
+                          handleAssignTask(task._id, memberId); 
+                        }
+                      }}
+                    >
+                      <div className="flex items-center w-full">
+                        <Avatar className="h-5 w-5 mr-2">
+                          {memberAvatar ? (
+                            <AvatarImage src={memberAvatar} alt={memberName} />
+                          ) : (
+                            <AvatarFallback>{memberName[0]}</AvatarFallback>
+                          )}
+                        </Avatar>
+                        <span className="truncate">{memberName}</span>
+                        {isAssigned && <Check size={14} className="ml-auto" />}
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })
+              ) : (
+                <DropdownMenuItem key="no-members" disabled>
+                  <div className="flex items-center w-full">
+                    No team members found
+                  </div>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

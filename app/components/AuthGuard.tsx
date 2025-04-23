@@ -61,7 +61,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       setIsVerifying(false);
     } catch (error) {
       console.error('Authentication check failed:', error);
-      router.push('/login');
+      router.push('/signIn');
     }
   }, [router]);
 

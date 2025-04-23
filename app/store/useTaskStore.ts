@@ -225,7 +225,7 @@ const useTaskStore = create<TaskState>()(
           });
           
           // Make API call to delete the task
-          const response = await fetch(`${apiUrl}/api/tasks/${taskId}`, {
+          const response = await fetch(`${apiUrl}/tasks/${taskId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${accessToken}`,

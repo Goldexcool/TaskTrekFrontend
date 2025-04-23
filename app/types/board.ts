@@ -77,7 +77,7 @@ const updateTask = async (taskId: string, updates: Partial<Task>) => {
   
   try {
     // API call with apiUpdates that has null instead of undefined
-    const response = await fetch(`/api/tasks/${taskId}`, {
+    const response = await fetch(`/tasks/${taskId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(apiUpdates)

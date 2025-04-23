@@ -239,12 +239,12 @@ const SignUpPage = () => {
                 </Link>
               </li>
               <li>
-                <Link 
+                {/* <Link 
                   href="/features" 
                   className="text-gray-600 hover:text-[#6366F1] transition-colors font-medium"
                 >
                   Features
-                </Link>
+                </Link> */}
               </li>
             </ul>
           </nav>
@@ -280,13 +280,13 @@ const SignUpPage = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link 
+                    {/* <Link 
                       href="/features" 
                       className="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Features
-                    </Link>
+                    </Link> */}
                   </li>
                 </ul>
               </nav>

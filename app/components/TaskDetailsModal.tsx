@@ -11,9 +11,11 @@ import {
   DialogClose
 } from '@/app/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
-import { CheckCircle, Clock, Trash2, Save } from 'lucide-react';
+import { CheckCircle, Clock, Trash2, Save, X, User, Check } from 'lucide-react';
 import { Task, Column } from '@/app/store/boardService';
 import { priorityConfig } from '@/app/utils/priorityConfig';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/app/components/ui/dropdown-menu';
+import { Button } from '@/app/components/ui/button';
 
 interface TaskDetailsModalProps {
   task: Task | null;
@@ -24,6 +26,9 @@ interface TaskDetailsModalProps {
   onDeleteTask: (columnId: string, taskId: string) => void;
   onMoveTask: (taskId: string, newColumnId: string) => void;
   tasks: Record<string, any[]>;
+  teamMembers: any[];
+  assignedUser: any | null;
+  handleAssignTask: (taskId: string, userId: string | null) => void;
 }
 
 const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
@@ -34,7 +39,10 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   onUpdateTask,
   onDeleteTask,
   onMoveTask,
-  tasks
+  tasks,
+  teamMembers,
+  assignedUser,
+  handleAssignTask
 }) => {
   const [localTask, setLocalTask] = useState<Task | null>(task);
 
@@ -162,6 +170,79 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   aria-label="Task due date"
                 />
               </div>
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Assigned To
+            </label>
+            
+            <div className="flex items-center gap-2">
+              {assignedUser ? (
+                <div className="flex items-center px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                  <Avatar className="h-6 w-6 mr-2">
+                    <AvatarImage src={assignedUser.avatar || assignedUser.user?.avatar} />
+                    <AvatarFallback>{(assignedUser.name || assignedUser.user?.name || 'U').charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <span>{assignedUser.name || assignedUser.user?.name}</span>
+                  
+                  {task && (
+                    <button 
+                      onClick={() => handleAssignTask(task._id, null)}
+                      className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <User size={14} className="mr-1" />
+                      Assign Task
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    {teamMembers.map(member => {
+                      // Handle different API response formats
+                      const memberId = member.user?._id || member._id;
+                      const memberName = member.user?.name || member.name || 'Unknown User';
+                      const memberAvatar = member.user?.avatar || member.avatar;
+                      
+                      // Only mark as selected if this member is assigned to the task
+                      const isAssigned = task?.assignedTo === memberId;
+                      
+                      return (
+                        <DropdownMenuItem 
+                          key={memberId || Math.random().toString()}
+                          onClick={() => task && handleAssignTask(task._id, memberId)}
+                          className={isAssigned ? "bg-gray-100 dark:bg-gray-800" : ""}
+                        >
+                          <div className="flex items-center w-full">
+                            <Avatar className="h-5 w-5 mr-2">
+                              {memberAvatar ? (
+                                <AvatarImage src={memberAvatar} alt={memberName} />
+                              ) : (
+                                <AvatarFallback>{memberName[0]}</AvatarFallback>
+                              )}
+                            </Avatar>
+                            <span className="flex-1">{memberName}</span>
+                            {isAssigned && <Check size={14} className="ml-auto" />}
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                    
+                    {teamMembers.length === 0 && (
+                      <div className="px-2 py-1 text-sm text-gray-500">
+                        No team members available
+                      </div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
           

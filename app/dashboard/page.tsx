@@ -12,12 +12,13 @@ import {
 } from 'lucide-react';
 import HeaderDash from '../components/HeaderDash';
 import { fetchTeams, Team, deleteTeam } from '../store/teamService';
-import { fetchUserBoards, Board } from '../store/boardService';
 import { fetchUserTasks, Task } from '../store/useTaskStore';
 import useAuthStore from '../store/useAuthStore';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { format } from 'timeago.js';
 import useActivityStore, { ActivityItem } from '../store/activityStore';
+import { Board } from '../store/boardService';
+import AppLayout from '../components/AppLayout';
 
 // API response interfaces
 interface TeamApiResponse {
@@ -204,14 +205,73 @@ const DashboardPage: React.FC = () => {
 
   // Load boards
   useEffect(() => {
-    const loadBoards = async () => {
+    const fetchBoards = async () => {
       setLoadingBoards(true);
       try {
-        const boardData = await fetchUserBoards();
-        setBoards(boardData);
-        setBoardsCount(boardData.length);
+        if (!user) {
+          setBoards([]);
+          setBoardsCount(0);
+          return;
+        }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const { accessToken } = useAuthStore.getState();
+
+        if (!accessToken) {
+          setBoards([]);
+          setBoardsCount(0);
+          return;
+        }
+
+        // Set up the request with authentication
+        const response = await fetch(`${apiUrl}/boards/complete`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch boards: ${response.status}`);
+        }
+
+        // Safely parse the response
+        const result = await response.json();
+        console.log('Raw board response from dashboard:', result); // Debug log
+
+        // Handle different response formats
+        let boardsData: any[] = [];
+
+        if (Array.isArray(result)) {
+          boardsData = result;
+        } else if (result && result.success && Array.isArray(result.data)) {
+          boardsData = result.data;
+        } else if (result && result.boards && Array.isArray(result.boards)) {
+          boardsData = result.boards;
+        } else if (result && (result._id || result.id)) {
+          // Handle single board object case
+          boardsData = [result];
+        } else {
+          console.error('Unexpected response format:', result);
+        }
+
+        // Process the boards to ensure consistent properties
+        const processedBoards: Board[] = boardsData.map(board => ({
+          ...board,
+          // Map id to _id for consistency with your components
+          _id: board._id || board.id || Date.now().toString(),
+          // Ensure title property exists
+          title: board.title || board.name || 'Untitled Board',
+          // Ensure other fields have defaults
+          description: board.description || '',
+          columns: Array.isArray(board.columns) ? board.columns : []
+        }));
+
+        console.log('Processed boards:', processedBoards);
+        setBoards(processedBoards);
+        setBoardsCount(processedBoards.length);
       } catch (error) {
-        console.error('Failed to load boards:', error);
+        console.error('Error fetching boards:', error);
         setBoards([]);
         setBoardsCount(0);
       } finally {
@@ -219,8 +279,8 @@ const DashboardPage: React.FC = () => {
       }
     };
 
-    loadBoards();
-  }, []);
+    fetchBoards();
+  }, [user]);
 
   // Load tasks
   useEffect(() => {
@@ -275,12 +335,10 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const loadActivity = async () => {
       try {
-        // First try with /api prefix
         const result = await fetchCombinedFeed({ limit: 10 });
 
         if (result && result.length === 0) {
           console.log("No activities found with /api prefix - trying alternative endpoint");
-          // If that doesn't work, try without /api prefix by directly using fetch
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
           const { accessToken } = useAuthStore.getState();
 
@@ -415,566 +473,569 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <HeaderDash />
+    <AppLayout>
+      <div className="min-h-screen bg-gray-900">
+        <HeaderDash />
 
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Page header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              Welcome back{user?.name ? `, ${user.name}` : ''}! Here&apos;s what&apos;s happening with your projects.
-            </p>
-          </div>
-          <div className="mt-4 md:mt-0 flex space-x-3">
-            <Link
-              href="/teams/create"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Team
-            </Link>
-          </div>
-        </div>
+        <main className="pt-15 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+              <p className="mt-1 text-sm text-gray-400">
 
-        {/* Stats cards */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-indigo-900/50 rounded-md p-3">
-                  <Users className="h-6 w-6 text-indigo-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-400 truncate">Total Teams</dt>
-                    <dd>
-                      <div className="text-lg font-bold text-white">
-                        {loading ? <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> : teamsCount}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
+                Welcome back{user?.name ? `, ${user.name}` : ''}! Here&apos;s what&apos;s happening with your projects.
+              </p>
             </div>
-            <div className="bg-gray-700 px-5 py-3">
-              <div className="text-sm">
-                <Link href="/teams" className="font-medium text-indigo-400 hover:text-indigo-300 flex items-center transition-colors">
-                  View all teams
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </div>
+            <div className="mt-4 md:mt-0 flex space-x-3">
+              <Link
+                href="/teams/create"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Create Team
+              </Link>
             </div>
           </div>
 
-          <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-green-900/50 rounded-md p-3">
-                  <Layers className="h-6 w-6 text-green-400" />
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-indigo-900/50 rounded-md p-3">
+                    <Users className="h-6 w-6 text-indigo-400" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-400 truncate">Total Teams</dt>
+                      <dd>
+                        <div className="text-lg font-bold text-white">
+                          {loading ? <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> : teamsCount}
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-400 truncate">Active Boards</dt>
-                    <dd>
-                      <div className="text-lg font-bold text-white">
-                        {loadingBoards ? <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> : boardsCount}
-                      </div>
-                    </dd>
-                  </dl>
+              </div>
+              <div className="bg-gray-700 px-5 py-3">
+                <div className="text-sm">
+                  <Link href="/teams" className="font-medium text-indigo-400 hover:text-indigo-300 flex items-center transition-colors">
+                    View all teams
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
                 </div>
               </div>
             </div>
-            <div className="bg-gray-700 px-5 py-3">
-              <div className="text-sm">
-                <Link href="/boards" className="font-medium text-green-400 hover:text-green-300 flex items-center transition-colors">
-                  View all boards
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
+
+            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-green-900/50 rounded-md p-3">
+                    <Layers className="h-6 w-6 text-green-400" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-400 truncate">Active Boards</dt>
+                      <dd>
+                        <div className="text-lg font-bold text-white">
+                          {loadingBoards ? <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> : boardsCount}
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-700 px-5 py-3">
+                <div className="text-sm">
+                  <Link href="/boards" className="font-medium text-green-400 hover:text-green-300 flex items-center transition-colors">
+                    View all boards
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-purple-900/50 rounded-md p-3">
+                    <CheckSquare className="h-6 w-6 text-purple-400" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-400 truncate">Tasks Completed</dt>
+                      <dd>
+                        <div className="text-lg font-bold text-white">
+                          {loadingTasks ?
+                            <span className="inline-block w-12 h-4 bg-gray-700 animate-pulse rounded"></span> :
+                            `${completedTaskCount}/${totalTaskCount}`
+                          }
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-700 px-5 py-3">
+                <div className="text-sm">
+                  <Link href="/tasks" className="font-medium text-purple-400 hover:text-purple-300 flex items-center transition-colors">
+                    View all tasks
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-yellow-900/50 rounded-md p-3">
+                    <Clock className="h-6 w-6 text-yellow-400" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-400 truncate">Due Today</dt>
+                      <dd>
+                        <div className="text-lg font-bold text-white">
+                          {loadingTasks ?
+                            <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> :
+                            dueTodayCount
+                          }
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-700 px-5 py-3">
+                <div className="text-sm">
+                  <Link href="/tasks?filter=today" className="font-medium text-yellow-400 hover:text-yellow-300 flex items-center transition-colors">
+                    View due tasks
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-purple-900/50 rounded-md p-3">
-                  <CheckSquare className="h-6 w-6 text-purple-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-400 truncate">Tasks Completed</dt>
-                    <dd>
-                      <div className="text-lg font-bold text-white">
-                        {loadingTasks ?
-                          <span className="inline-block w-12 h-4 bg-gray-700 animate-pulse rounded"></span> :
-                          `${completedTaskCount}/${totalTaskCount}`
-                        }
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-700 px-5 py-3">
-              <div className="text-sm">
-                <Link href="/tasks" className="font-medium text-purple-400 hover:text-purple-300 flex items-center transition-colors">
-                  View all tasks
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-yellow-900/50 rounded-md p-3">
-                  <Clock className="h-6 w-6 text-yellow-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-400 truncate">Due Today</dt>
-                    <dd>
-                      <div className="text-lg font-bold text-white">
-                        {loadingTasks ?
-                          <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> :
-                          dueTodayCount
-                        }
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-700 px-5 py-3">
-              <div className="text-sm">
-                <Link href="/tasks?filter=today" className="font-medium text-yellow-400 hover:text-yellow-300 flex items-center transition-colors">
-                  View due tasks
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Two column layout */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Column 1: Your Teams */}
-          <div>
-            <div className="bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-              <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
-                <h2 className="text-lg font-medium text-white flex items-center">
-                  <Users className="h-5 w-5 mr-2 text-gray-400" />
-                  Your Teams
-                </h2>
-                <Link
-                  href="/teams"
-                  className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                >
-                  View all
-                </Link>
-              </div>
-
-              {loading ? (
-                <div className="flex justify-center items-center py-10">
-                  <LoadingSpinner size="md" />
-                </div>
-              ) : error ? (
-                <div className="px-6 py-8 text-center">
-                  <p className="text-sm text-red-400">{error}</p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm font-medium"
+          {/* Two column layout */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            {/* Column 1: Your Teams */}
+            <div>
+              <div className="bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
+                <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-white flex items-center">
+                    <Users className="h-5 w-5 mr-2 text-gray-400" />
+                    Your Teams
+                  </h2>
+                  <Link
+                    href="/teams"
+                    className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                   >
-                    Retry
-                  </button>
+                    View all
+                  </Link>
                 </div>
-              ) : (
-                <ul className="divide-y divide-gray-700">
-                  {teams.length > 0 && userOwnedTeams.length > 0 ? (
-                    // Display user's owned teams if any exist
-                    userOwnedTeams.slice(0, 3).map((team) => {
-                      const avatarStyle = getTeamAvatarStyle(team.name);
 
-                      return (
-                        <li key={team._id} className="px-6 py-5 relative group">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${team.avatar ? '' : avatarStyle.darkBg} flex items-center justify-center overflow-hidden ${team.avatar ? '' : avatarStyle.darkText} font-medium`}>
-                                {team.avatar ? (
-                                  <img
-                                    src={team.avatar}
-                                    alt={team.name}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  team.name.substring(0, 2).toUpperCase()
-                                )}
+                {loading ? (
+                  <div className="flex justify-center items-center py-10">
+                    <LoadingSpinner size="md" />
+                  </div>
+                ) : error ? (
+                  <div className="px-6 py-8 text-center">
+                    <p className="text-sm text-red-400">{error}</p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm font-medium"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-gray-700">
+                    {teams.length > 0 && userOwnedTeams.length > 0 ? (
+                      // Display user's owned teams if any exist
+                      userOwnedTeams.slice(0, 3).map((team) => {
+                        const avatarStyle = getTeamAvatarStyle(team.name);
+
+                        return (
+                          <li key={team._id} className="px-6 py-5 relative group">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${team.avatar ? '' : avatarStyle.darkBg} flex items-center justify-center overflow-hidden ${team.avatar ? '' : avatarStyle.darkText} font-medium`}>
+                                  {team.avatar ? (
+                                    <img
+                                      src={team.avatar}
+                                      alt={team.name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    team.name.substring(0, 2).toUpperCase()
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <h3 className="text-sm font-medium text-white">{team.name}</h3>
+                                  <div className="flex items-center mt-1">
+                                    <Users className="h-3.5 w-3.5 text-gray-500" />
+                                    <span className="ml-1 text-xs text-gray-500">
+                                      {team.members ? team.members.length : 0} members
+                                    </span>
+                                    <span className="mx-1.5 text-gray-500">•</span>
+                                    <Layers className="h-3.5 w-3.5 text-gray-500" />
+                                    <span className="ml-1 text-xs text-gray-500">
+                                      {boards.filter(board => board.teamId === team._id).length} boards
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="ml-4">
-                                <h3 className="text-sm font-medium text-white">{team.name}</h3>
-                                <div className="flex items-center mt-1">
-                                  <Users className="h-3.5 w-3.5 text-gray-500" />
-                                  <span className="ml-1 text-xs text-gray-500">
-                                    {team.members ? team.members.length : 0} members
-                                  </span>
-                                  <span className="mx-1.5 text-gray-500">•</span>
-                                  <Layers className="h-3.5 w-3.5 text-gray-500" />
-                                  <span className="ml-1 text-xs text-gray-500">
-                                    {boards.filter(board => board.teamId === team._id).length} boards
-                                  </span>
+                              <div className="relative">
+                                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
+                                  <Link
+                                    href={`/teams/create?edit=true&id=${team._id}`}
+                                    className="p-1.5 text-gray-400 hover:text-white rounded-full hover:bg-gray-700"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Link>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      handleDeleteTeam(team._id);
+                                    }}
+                                    className="p-1.5 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
                                 </div>
                               </div>
                             </div>
-                            <div className="relative">
-                              <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
-                                <Link
-                                  href={`/teams/create?edit=true&id=${team._id}`}
-                                  className="p-1.5 text-gray-400 hover:text-white rounded-full hover:bg-gray-700"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Link>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    handleDeleteTeam(team._id);
-                                  }}
-                                  className="p-1.5 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          <Link
-                            href={`/teams/${team._id}`}
-                            className="absolute inset-0 z-0"
-                            aria-hidden="true"
-                          />
-                        </li>
-                      );
-                    })
-                  ) : teams.length > 0 && userMemberTeams.length > 0 ? (
-                    // If user doesn't own any teams but is a member of some, show those
-                    userMemberTeams.slice(0, 3).map((team) => {
-                      const avatarStyle = getTeamAvatarStyle(team.name);
+                            <Link
+                              href={`/teams/${team._id}`}
+                              className="absolute inset-0 z-0"
+                              aria-hidden="true"
+                            />
+                          </li>
+                        );
+                      })
+                    ) : teams.length > 0 && userMemberTeams.length > 0 ? (
+                      // If user doesn't own any teams but is a member of some, show those
+                      userMemberTeams.slice(0, 3).map((team) => {
+                        const avatarStyle = getTeamAvatarStyle(team.name);
 
-                      return (
-                        <li key={team._id} className="px-6 py-5 relative group">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${team.avatar ? '' : 'bg-blue-900/50'} flex items-center justify-center overflow-hidden ${team.avatar ? '' : 'text-blue-300'} font-medium`}>
-                                {team.avatar ? (
-                                  <img
-                                    src={team.avatar}
-                                    alt={team.name}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  team.name.substring(0, 2).toUpperCase()
-                                )}
-                              </div>
-                              <div className="ml-4">
-                                <h3 className="text-sm font-medium text-white">{team.name}</h3>
-                                <div className="flex items-center mt-1">
-                                  <span className="px-1.5 py-0.5 text-xs bg-blue-900/30 text-blue-300 rounded-full">Member</span>
-                                  <span className="mx-1.5 text-gray-500">•</span>
-                                  <Users className="h-3.5 w-3.5 text-gray-500" />
-                                  <span className="ml-1 text-xs text-gray-500">
-                                    {team.members ? team.members.length : 0} members
-                                  </span>
+                        return (
+                          <li key={team._id} className="px-6 py-5 relative group">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${team.avatar ? '' : 'bg-blue-900/50'} flex items-center justify-center overflow-hidden ${team.avatar ? '' : 'text-blue-300'} font-medium`}>
+                                  {team.avatar ? (
+                                    <img
+                                      src={team.avatar}
+                                      alt={team.name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    team.name.substring(0, 2).toUpperCase()
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <h3 className="text-sm font-medium text-white">{team.name}</h3>
+                                  <div className="flex items-center mt-1">
+                                    <span className="px-1.5 py-0.5 text-xs bg-blue-900/30 text-blue-300 rounded-full">Member</span>
+                                    <span className="mx-1.5 text-gray-500">•</span>
+                                    <Users className="h-3.5 w-3.5 text-gray-500" />
+                                    <span className="ml-1 text-xs text-gray-500">
+                                      {team.members ? team.members.length : 0} members
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                            <Link
+                              href={`/teams/${team._id}`}
+                              className="absolute inset-0 z-0"
+                              aria-hidden="true"
+                            />
+                          </li>
+                        );
+                      })
+                    ) : teams.length > 0 ? (
+                      // If there are teams but the user doesn't own any, show a message
+                      <li className="px-6 py-8 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
+                            <Users className="h-6 w-6 text-gray-500" />
                           </div>
-                          <Link
-                            href={`/teams/${team._id}`}
-                            className="absolute inset-0 z-0"
-                            aria-hidden="true"
-                          />
-                        </li>
-                      );
-                    })
-                  ) : teams.length > 0 ? (
-                    // If there are teams but the user doesn't own any, show a message
-                    <li className="px-6 py-8 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                          <Users className="h-6 w-6 text-gray-500" />
+                          <p className="text-sm text-gray-400">You don&apos;t manage any teams yet</p>
+                          <p className="mt-1 text-xs text-gray-500">Teams you create will appear here</p>
                         </div>
-                        <p className="text-sm text-gray-400">You don&apos;t manage any teams yet</p>
-                        <p className="mt-1 text-xs text-gray-500">Teams you create will appear here</p>
-                      </div>
+                      </li>
+                    ) : (
+                      // If no teams at all, show a message
+                      <li className="px-6 py-8 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
+                            <Users className="h-6 w-6 text-gray-500" />
+                          </div>
+                          <p className="text-sm text-gray-400">No teams found</p>
+                          <p className="mt-1 text-xs text-gray-500">Create your first team to get started</p>
+                        </div>
+                      </li>
+                    )}
+
+                    {/* Create team item */}
+                    <li className="px-6 py-4">
+                      <Link
+                        href="/teams/create"
+                        className="flex items-center justify-center py-3 border-2 border-dashed border-gray-700 rounded-lg text-sm font-medium text-gray-400 hover:border-indigo-500 hover:text-indigo-400 transition-colors"
+                      >
+                        <Plus className="h-5 w-5 mr-2" />
+                        Create New Team
+                      </Link>
                     </li>
+                  </ul>
+                )}
+              </div>
+
+              {/* Recent Boards */}
+              <div className="mt-8 bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
+                <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-white flex items-center">
+                    <Layers className="h-5 w-5 mr-2 text-gray-400" />
+                    Recent Boards
+                  </h2>
+                  <Link
+                    href="/boards"
+                    className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    View all
+                  </Link>
+                </div>
+
+                <ul className="divide-y divide-gray-700">
+                  {loadingBoards ? (
+                    <li className="flex justify-center items-center py-10">
+                      <LoadingSpinner size="md" />
+                    </li>
+                  ) : recentBoards.length > 0 ? (
+                    recentBoards.map((board) => {
+                      const color = getBoardColor(board.title || 'Untitled');
+                      const teamName = teams.find(t => t._id === board.teamId)?.name || 'Personal';
+                      const updatedTime = format(new Date(board.updatedAt || Date.now()));
+
+                      return (
+                        <li key={board._id} className="px-6 py-4 relative">
+                          <div className="flex items-center">
+                            <div className={`flex-shrink-0 w-8 h-8 rounded-md ${getBoardColor(board.title || 'Untitled')} flex items-center justify-center text-white font-medium`}>
+                              {(board.title || 'Untitled').substring(0, 1)}
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-sm font-medium text-white">{board.title || 'Untitled Board'}</h3>
+                              <div className="flex items-center mt-0.5">
+                                <span className="text-xs text-gray-500">{teamName}</span>
+                                <span className="mx-1.5 text-gray-500">•</span>
+                                <Clock className="h-3 w-3 text-gray-500" />
+                                <span className="ml-1 text-xs text-gray-500">{updatedTime}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <Link
+                            href={`/boards/${board._id}`}
+                            className="absolute inset-0 z-0"
+                            aria-hidden="true"
+                          />
+                        </li>
+                      );
+                    })
                   ) : (
-                    // If no teams at all, show a message
                     <li className="px-6 py-8 text-center">
                       <div className="flex flex-col items-center">
                         <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                          <Users className="h-6 w-6 text-gray-500" />
+                          <Layers className="h-6 w-6 text-gray-500" />
                         </div>
-                        <p className="text-sm text-gray-400">No teams found</p>
-                        <p className="mt-1 text-xs text-gray-500">Create your first team to get started</p>
+                        <p className="text-sm text-gray-400">No boards found</p>
+                        <p className="mt-1 text-xs text-gray-500">Create your first board to get started</p>
                       </div>
                     </li>
                   )}
 
-                  {/* Create team item */}
-                  <li className="px-6 py-4">
-                    <Link
-                      href="/teams/create"
-                      className="flex items-center justify-center py-3 border-2 border-dashed border-gray-700 rounded-lg text-sm font-medium text-gray-400 hover:border-indigo-500 hover:text-indigo-400 transition-colors"
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Create New Team
-                    </Link>
-                  </li>
+
                 </ul>
-              )}
+              </div>
             </div>
 
-            {/* Recent Boards */}
-            <div className="mt-8 bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-              <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
-                <h2 className="text-lg font-medium text-white flex items-center">
-                  <Layers className="h-5 w-5 mr-2 text-gray-400" />
-                  Recent Boards
-                </h2>
-                <Link
-                  href="/boards"
-                  className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                >
-                  View all
-                </Link>
-              </div>
+            {/* Column 2: Upcoming Tasks and Activity */}
+            <div>
+              {/* Upcoming Tasks */}
+              <div className="bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
+                <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-white flex items-center">
+                    <Calendar className="h-5 w-5 mr-2 text-gray-400" />
+                    Upcoming Tasks
+                  </h2>
+                  <Link
+                    href="/tasks"
+                    className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    View all
+                  </Link>
+                </div>
 
-              <ul className="divide-y divide-gray-700">
-                {loadingBoards ? (
-                  <li className="flex justify-center items-center py-10">
-                    <LoadingSpinner size="md" />
-                  </li>
-                ) : recentBoards.length > 0 ? (
-                  recentBoards.map((board) => {
-                    const color = getBoardColor(board.title || 'Untitled');
-                    const teamName = teams.find(t => t._id === board.teamId)?.name || 'Personal';
-                    const updatedTime = format(new Date(board.updatedAt || Date.now()));
-
-                    return (
-                      <li key={board._id} className="px-6 py-4 relative">
+                <ul className="divide-y divide-gray-700">
+                  {loadingTasks ? (
+                    <li className="flex justify-center items-center py-10">
+                      <LoadingSpinner size="md" />
+                    </li>
+                  ) : upcomingTasks.length > 0 ? (
+                    upcomingTasks.map((task) => (
+                      <li key={task._id} className="px-6 py-4 relative">
                         <div className="flex items-center">
-                          <div className={`flex-shrink-0 w-8 h-8 rounded-md ${getBoardColor(board.title || 'Untitled')} flex items-center justify-center text-white font-medium`}>
-                            {(board.title || 'Untitled').substring(0, 1)}
+                          <div className="flex-shrink-0">
+                            <div className={`w-2 h-2 rounded-full ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500' :
+                              task.priority === 'medium' ? 'bg-yellow-500' :
+                                'bg-green-500'
+                              }`}></div>
                           </div>
                           <div className="ml-3 flex-1">
-                            <h3 className="text-sm font-medium text-white">{board.title || 'Untitled Board'}</h3>
+                            <h3 className="text-sm font-medium text-white">{task.title}</h3>
                             <div className="flex items-center mt-0.5">
-                              <span className="text-xs text-gray-500">{teamName}</span>
-                              <span className="mx-1.5 text-gray-500">•</span>
                               <Clock className="h-3 w-3 text-gray-500" />
-                              <span className="ml-1 text-xs text-gray-500">{updatedTime}</span>
+                              <span className="ml-1 text-xs text-gray-500">
+                                Due {formatDueDate(task.dueDate)}
+                              </span>
+                              <span className="mx-1.5 text-gray-500">•</span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded-full ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-900/50 text-red-300' :
+                                task.priority === 'medium' ? 'bg-yellow-900/50 text-yellow-300' :
+                                  'bg-green-900/50 text-green-300'
+                                }`}>
+                                {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Normal'}
+                              </span>
                             </div>
+                          </div>
+                          <div className="ml-4">
+                            {task.assignedTo ? (
+                              <div className="h-8 w-8 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-300 font-medium text-xs">
+                                {task.assignedUser && task.assignedUser.name ?
+                                  task.assignedUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() :
+                                  'U'}
+                              </div>
+                            ) : (
+                              <div className="h-8 w-8 rounded-full bg-gray-700/50 flex items-center justify-center text-gray-400 font-medium text-xs">
+                                <Users className="h-4 w-4" />
+                              </div>
+                            )}
                           </div>
                         </div>
                         <Link
-                          href={`/boards/${board._id}`}
+                          href={`/boards/${task.boardId}`}
                           className="absolute inset-0 z-0"
                           aria-hidden="true"
                         />
                       </li>
-                    );
-                  })
-                ) : (
-                  <li className="px-6 py-8 text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                        <Layers className="h-6 w-6 text-gray-500" />
+                    ))
+                  ) : (
+                    <li className="px-6 py-8 text-center">
+                      <div className="flex flex-col items-center">
+                        <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
+                          <Calendar className="h-6 w-6 text-gray-500" />
+                        </div>
+                        <p className="text-sm text-gray-400">No upcoming tasks</p>
+                        <p className="mt-1 text-xs text-gray-500">Create a task with a due date to see it here</p>
                       </div>
-                      <p className="text-sm text-gray-400">No boards found</p>
-                      <p className="mt-1 text-xs text-gray-500">Create your first board to get started</p>
-                    </div>
-                  </li>
-                )}
-
-
-              </ul>
-            </div>
-          </div>
-
-          {/* Column 2: Upcoming Tasks and Activity */}
-          <div>
-            {/* Upcoming Tasks */}
-            <div className="bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-              <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
-                <h2 className="text-lg font-medium text-white flex items-center">
-                  <Calendar className="h-5 w-5 mr-2 text-gray-400" />
-                  Upcoming Tasks
-                </h2>
-                <Link
-                  href="/tasks"
-                  className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                >
-                  View all
-                </Link>
-              </div>
-
-              <ul className="divide-y divide-gray-700">
-                {loadingTasks ? (
-                  <li className="flex justify-center items-center py-10">
-                    <LoadingSpinner size="md" />
-                  </li>
-                ) : upcomingTasks.length > 0 ? (
-                  upcomingTasks.map((task) => (
-                    <li key={task._id} className="px-6 py-4 relative">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className={`w-2 h-2 rounded-full ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500' :
-                              task.priority === 'medium' ? 'bg-yellow-500' :
-                                'bg-green-500'
-                            }`}></div>
-                        </div>
-                        <div className="ml-3 flex-1">
-                          <h3 className="text-sm font-medium text-white">{task.title}</h3>
-                          <div className="flex items-center mt-0.5">
-                            <Clock className="h-3 w-3 text-gray-500" />
-                            <span className="ml-1 text-xs text-gray-500">
-                              Due {formatDueDate(task.dueDate)}
-                            </span>
-                            <span className="mx-1.5 text-gray-500">•</span>
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-900/50 text-red-300' :
-                                task.priority === 'medium' ? 'bg-yellow-900/50 text-yellow-300' :
-                                  'bg-green-900/50 text-green-300'
-                              }`}>
-                              {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Normal'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          {task.assignedTo ? (
-                            <div className="h-8 w-8 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-300 font-medium text-xs">
-                              {task.assignedUser && task.assignedUser.name ?
-                                task.assignedUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() :
-                                'U'}
-                            </div>
-                          ) : (
-                            <div className="h-8 w-8 rounded-full bg-gray-700/50 flex items-center justify-center text-gray-400 font-medium text-xs">
-                              <Users className="h-4 w-4" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <Link
-                        href={`/boards/${task.boardId}`}
-                        className="absolute inset-0 z-0"
-                        aria-hidden="true"
-                      />
                     </li>
-                  ))
-                ) : (
-                  <li className="px-6 py-8 text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                        <Calendar className="h-6 w-6 text-gray-500" />
-                      </div>
-                      <p className="text-sm text-gray-400">No upcoming tasks</p>
-                      <p className="mt-1 text-xs text-gray-500">Create a task with a due date to see it here</p>
-                    </div>
-                  </li>
-                )}
+                  )}
 
-                {/* Create task item */}
-                {/* <li className="px-6 py-4">
+                  {/* Create task item */}
+                  {/* <li className="px-6 py-4">
                   <div className="flex items-center justify-center py-3 border-2 border-dashed border-gray-700 rounded-lg text-sm font-medium text-gray-400 hover:border-indigo-500 hover:text-indigo-400 transition-colors cursor-pointer">
                     <Plus className="h-5 w-5 mr-2" />
                     Add New Task
                   </div>
                 </li> */}
-              </ul>
-            </div>
-
-            {/* Activity Feed */}
-            <div className="mt-8 bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-              <div className="px-6 py-5 border-b border-gray-700">
-                <h2 className="text-lg font-medium text-white flex items-center">
-                  <Activity className="h-5 w-5 mr-2 text-gray-400" />
-                  Activity Feed
-                  {!loadingActivity && combinedFeed.length > 0 && (
-                    <span className="ml-2 text-xs bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full">
-                      {combinedFeed.length}
-                    </span>
-                  )}
-                </h2>
+                </ul>
               </div>
 
-              {loadingActivity ? (
-                <div className="flex justify-center items-center py-10">
-                  <LoadingSpinner size="md" />
+              {/* Activity Feed */}
+              <div className="mt-8 bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
+                <div className="px-6 py-5 border-b border-gray-700">
+                  <h2 className="text-lg font-medium text-white flex items-center">
+                    <Activity className="h-5 w-5 mr-2 text-gray-400" />
+                    Activity Feed
+                    {!loadingActivity && combinedFeed.length > 0 && (
+                      <span className="ml-2 text-xs bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full">
+                        {combinedFeed.length}
+                      </span>
+                    )}
+                  </h2>
                 </div>
-              ) : (
-                <div className="flow-root px-6 py-5">
-                  <ul className="-mb-8">
-                    {combinedFeed.length > 0 ? (
-                      combinedFeed.slice(0, 4).map((activity, idx) => (
-                        <li key={activity._id || activity.id || idx}>
-                          <div className="relative pb-8">
-                            {/* Timeline connector */}
-                            {idx !== combinedFeed.slice(0, 4).length - 1 && (
-                              <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-700" aria-hidden="true" />
-                            )}
 
-                            <div className="relative flex space-x-3">
-                              {/* Avatar */}
-                              <div className="h-10 w-10 rounded-full bg-indigo-900/50 flex items-center justify-center ring-8 ring-gray-800">
-                                <span className="text-indigo-300 font-medium">
-                                  {getUserInitials(activity)}
-                                </span>
-                              </div>
+                {loadingActivity ? (
+                  <div className="flex justify-center items-center py-10">
+                    <LoadingSpinner size="md" />
+                  </div>
+                ) : (
+                  <div className="flow-root px-6 py-5">
+                    <ul className="-mb-8">
+                      {combinedFeed.length > 0 ? (
+                        combinedFeed.slice(0, 4).map((activity, idx) => (
+                          <li key={activity._id || activity.id || idx}>
+                            <div className="relative pb-8">
+                              {/* Timeline connector */}
+                              {idx !== combinedFeed.slice(0, 4).length - 1 && (
+                                <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-700" aria-hidden="true" />
+                              )}
 
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div>
-                                  <div className="text-sm font-medium text-white">
-                                    {getUserDisplayName(activity, user?._id)}
-                                  </div>
-                                  <p className="mt-0.5 text-sm text-gray-500">
-                                    {getTimeAgo(activity.timestamp || activity.createdAt)}
-                                  </p>
+                              <div className="relative flex space-x-3">
+                                {/* Avatar */}
+                                <div className="h-10 w-10 rounded-full bg-indigo-900/50 flex items-center justify-center ring-8 ring-gray-800">
+                                  <span className="text-indigo-300 font-medium">
+                                    {getUserInitials(activity)}
+                                  </span>
                                 </div>
-                                <div className="mt-2 text-sm text-gray-400">
-                                  <p>{formatActivityText(activity)}</p>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                  <div>
+                                    <div className="text-sm font-medium text-white">
+                                      {getUserDisplayName(activity, user?._id)}
+                                    </div>
+                                    <p className="mt-0.5 text-sm text-gray-500">
+                                      {getTimeAgo(activity.timestamp || activity.createdAt)}
+                                    </p>
+                                  </div>
+                                  <div className="mt-2 text-sm text-gray-400">
+                                    <p>{formatActivityText(activity)}</p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-center py-8">
+                          <p className="text-sm text-gray-400">No recent activity</p>
                         </li>
-                      ))
-                    ) : (
-                      <li className="text-center py-8">
-                        <p className="text-sm text-gray-400">No recent activity</p>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )}
+                      )}
+                    </ul>
+                  </div>
+                )}
 
-              {combinedFeed.length > 4 && (
-                <div className="px-6 py-3 bg-gray-700 text-center">
-                  <Link
-                    href="/notifications"
-                    className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    View more activity
-                  </Link>
-                </div>
-              )}
+                {combinedFeed.length > 4 && (
+                  <div className="px-6 py-3 bg-gray-700 text-center">
+                    <Link
+                      href="/notifications"
+                      className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      View more activity
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </AppLayout>
+
   );
 };
 

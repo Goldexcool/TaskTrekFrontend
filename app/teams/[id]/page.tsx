@@ -622,7 +622,7 @@ const TeamDetailsPage: React.FC = () => {
     setEditBoardDescription(board.description || '');
   };
   
-  // Function to invite a new team member
+  // Function to add a new team member
   const handleInviteMember = async () => {
     if (!newMemberEmail.trim() || !validateEmail(newMemberEmail)) {
       toast({
@@ -638,7 +638,7 @@ const TeamDetailsPage: React.FC = () => {
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      // Based on the API error, it expects a different request body format
+      // Using direct API endpoint for adding members
       const response = await fetch(`${apiUrl}/teams/${team?._id}/members`, {
         method: 'POST',
         headers: {
@@ -646,41 +646,65 @@ const TeamDetailsPage: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          email: newMemberEmail, // Changed from 'emails' array to 'email' string
+          email: newMemberEmail, 
           role: newMemberRole
         })
       });
       
       const data = await response.json();
-      console.log('Invitation response:', data);
       
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send invitation');
+        // Check specific error conditions
+        if (data.userNotFound || data.message?.includes('user not found')) {
+          toast({
+            title: "User Not Found",
+            description: `No account found with email ${newMemberEmail}. They need to create an account first.`,
+            variant: "default"
+          });
+          return;
+        } else if (data.message?.includes('already a member')) {
+          toast({
+            title: "Already a Member",
+            description: `${newMemberEmail} is already a member of this team.`,
+            variant: "default"
+          });
+          return;
+        }
+        
+        throw new Error(data.message || 'Failed to add team member');
       }
       
-      // Handle success with proper feedback
-      if (data.success) {
-        // Show success message
-        toast({
-          title: "Invitation Sent",
-          description: `An invitation has been sent to ${newMemberEmail}`,
-          variant: "success"
+      // Handle success
+      toast({
+        title: "Success",
+        description: `${newMemberEmail} was added to the team successfully.`,
+        variant: "success"
+      });
+      
+      // Clear inputs and refresh team data
+      setNewMemberEmail('');
+      setNewMemberRole('member');
+      
+      // Refresh team data to show new members
+      if (team?._id) {
+        // Fetch updated member list
+        const updatedTeamResponse = await fetch(`${apiUrl}/teams/${team._id}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
         });
         
-        // Clear the input field
-        setNewMemberEmail('');
-        setNewMemberRole('member');
-        
-        // Refresh team data to show new members
-        if (team?._id) {
-          fetchPendingInvites();
+        if (updatedTeamResponse.ok) {
+          const updatedTeam = await updatedTeamResponse.json();
+          setTeam(updatedTeam.data || updatedTeam);
         }
       }
     } catch (error: any) {
-      console.error('Error inviting member:', error);
+      console.error('Error adding team member:', error);
       toast({
         title: "Error",
-        description: typeof error === 'string' ? error : error.message || 'Failed to send invitation',
+        description: typeof error === 'string' ? error : error.message || 'Failed to add team member',
         variant: "destructive"
       });
     } finally {
@@ -763,6 +787,128 @@ const TeamDetailsPage: React.FC = () => {
         }
       });
   }, [boards, searchQuery, sortBy, activeTab]);
+
+  // Function to check if user exists
+  const checkUserExists = async (email: string): Promise<boolean> => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      // Using a GET request to check if user exists
+      const response = await fetch(`${apiUrl}/users/check?email=${encodeURIComponent(email)}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) return false;
+      
+      const data = await response.json();
+      return data.exists || false;
+    } catch (error) {
+      console.error('Error checking user existence:', error);
+      return false;
+    }
+  };
+
+  // Function to handle role changes
+  const updateMemberRole = async (userId: string, newRole: string) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${apiUrl}/teams/${team?._id}/members/${userId}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          role: newRole
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update member role');
+      }
+      
+      toast({
+        title: "Role Updated",
+        description: "Member role has been updated successfully",
+        variant: "success"
+      });
+      
+      // Update local team state
+      if (team) {
+        setTeam({
+          ...team,
+          members: team.members.map(member => {
+            const memberId = typeof member.user === 'string' ? member.user : member.user._id;
+            if (memberId === userId) {
+              return { ...member, role: newRole as 'owner' | 'admin' | 'member' };
+            }
+            return member;
+          })
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('Error updating member role:', error);
+      toast({
+        title: "Error",
+        description: typeof error === 'string' ? error : error.message || 'Failed to update member role',
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to remove a team member
+  const removeMember = async (userId: string) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${apiUrl}/teams/${team?._id}/members/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to remove team member');
+      }
+      
+      toast({
+        title: "Member Removed",
+        description: "Team member has been removed successfully",
+        variant: "success"
+      });
+      
+      // Update local team state
+      if (team) {
+        setTeam({
+          ...team,
+          members: team.members.filter(member => {
+            const memberId = typeof member.user === 'string' 
+              ? member.user : member.user._id;
+            return memberId !== userId;
+          })
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('Error removing team member:', error);
+      toast({
+        title: "Error",
+        description: typeof error === 'string' ? error : error.message || 'Failed to remove team member',
+        variant: "destructive"
+      });
+    }
+  };
 
   // Main data loading effect
   useEffect(() => {
@@ -1898,12 +2044,12 @@ const TeamDetailsPage: React.FC = () => {
                   {invitingMember ? (
                     <>
                       <LoadingSpinner size="sm" className="mr-2" />
-                      Sending Invitation...
+                      Adding Member...
                     </>
                   ) : (
                     <>
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Invitation
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Add Member
                     </>
                   )}
                 </Button>
@@ -1923,6 +2069,10 @@ const TeamDetailsPage: React.FC = () => {
                     team.members.map((member) => {
                       const userData = getUserData(member);
                       const avatarStyle = getAvatarStyle(userData.name);
+                      const isCurrentUser = user && user._id === userData.id;
+                      const isTeamOwner = typeof team.owner === 'string' 
+                        ? team.owner === userData.id 
+                        : team.owner._id === userData.id;
                       
                       return (
                         <div 
@@ -1946,6 +2096,7 @@ const TeamDetailsPage: React.FC = () => {
                             <div>
                               <p className="font-medium text-gray-900 dark:text-gray-100">
                                 {userData.name}
+                                {isCurrentUser && <span className="ml-2 text-xs text-gray-500">(You)</span>}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {userData.email}
@@ -1972,26 +2123,50 @@ const TeamDetailsPage: React.FC = () => {
                               {member.role === 'owner' ? 'Owner' : member.role === 'admin' ? 'Admin' : 'Member'}
                             </Badge>
                             
-                            {isOwner && userData.id !== (typeof team.owner === 'string' ? team.owner : team.owner._id) && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="ml-2 h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem disabled={member.role === 'admin'}>
-                                    Promote to Admin
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem disabled={member.role !== 'admin'}>
-                                    Demote to Member
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-red-500 focus:text-red-500">
-                                    Remove from Team
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                            {(isOwner || isAdmin) && !isTeamOwner && !isCurrentUser && (
+                              <div className="flex ml-2">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeMember(userData.id)}
+                                        className="h-8 w-8 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Remove member</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                                
+                                {isOwner && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="ml-1 h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      {member.role !== 'admin' && (
+                                        <DropdownMenuItem onClick={() => updateMemberRole(userData.id, 'admin')}>
+                                          <Shield className="h-4 w-4 mr-2 text-purple-500" /> 
+                                          Promote to Admin
+                                        </DropdownMenuItem>
+                                      )}
+                                      {member.role === 'admin' && (
+                                        <DropdownMenuItem onClick={() => updateMemberRole(userData.id, 'member')}>
+                                          <Users className="h-4 w-4 mr-2 text-blue-500" />
+                                          Change to Member
+                                        </DropdownMenuItem>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>

@@ -301,13 +301,13 @@ function TasksContent() {
       }
       
       const [teamsResponse, boardsResponse] = await Promise.all([
-        fetch(`${apiUrl}/api/teams`, {
+        fetch(`${apiUrl}/teams`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           }
         }),
-        fetch(`${apiUrl}/api/boards`, {
+        fetch(`${apiUrl}/boards`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
@@ -335,11 +335,9 @@ function TasksContent() {
   };
 
   const handleToggleTaskCompletion = async (taskId: string, completed: boolean, e?: React.MouseEvent) => {
-    // Prevent event propagation if event is provided
     if (e) e.stopPropagation();
     
     try {
-      // Optimistically update the UI
       setTasks(prevTasks => 
         prevTasks.map(task => 
           task.id === taskId ? { ...task, completed: !completed } : task
@@ -352,7 +350,7 @@ function TasksContent() {
       
       if (completed) {
         // Reopening a completed task
-        endpoint = `/api/tasks/${taskId}/reopen`;
+        endpoint = `/tasks/${taskId}/reopen`;
         method = 'PUT';
       } else {
         // Completing a task
@@ -1091,6 +1089,7 @@ function TasksContent() {
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap">
                         {task.assignedTo ? (
+
                           <div className="flex items-center">
                             {task.assignedTo.avatar ? (
                               <img 

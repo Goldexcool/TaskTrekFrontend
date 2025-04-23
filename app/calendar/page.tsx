@@ -244,7 +244,7 @@ const CalendarPage: React.FC = () => {
       
       if (completed) {
         // Reopening a completed task
-        endpoint = `/api/tasks/${taskId}/reopen`;
+        endpoint = `/tasks/${taskId}/reopen`;
         method = 'PUT';
       } else {
         // Completing a task

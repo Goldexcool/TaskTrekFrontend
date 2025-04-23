@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React from 'react'
@@ -52,14 +53,14 @@ const IntDem = () => {
                             ))}
                         </ul>
 
-                        <div className="mt-8">
+                        {/* <div className="mt-8">
                             <Link
                                 href="/features"
                                 className="bg-[#F9FAFB] text-[#111827] border border-[#E5E7EB] hover:border-[#6366F1] py-3 px-8 rounded-xl font-medium transition-all shadow-sm hover:shadow flex items-center justify-center w-fit"
                             >
                                 Explore all features
                             </Link>
-                        </div>
+                        </div> */}
                     </motion.div>
 
                     <motion.div

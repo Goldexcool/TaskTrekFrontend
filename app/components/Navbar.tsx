@@ -23,9 +23,9 @@ const Navbar = () => {
                 
                 {/* Desktop navigation */}
                 <div className="hidden md:flex items-center space-x-8">
-                  <Link href="/features" className="text-[#111827] hover:text-[#6366F1] transition-colors">
+                  {/* <Link href="/features" className="text-[#111827] hover:text-[#6366F1] transition-colors">
                     Features
-                  </Link>
+                  </Link> */}
                   <Link href="/pricing" className="text-[#111827] hover:text-[#6366F1] transition-colors">
                     Pricing
                   </Link>
@@ -69,22 +69,22 @@ const Navbar = () => {
                     className="md:hidden py-4 overflow-hidden"
                   >
                     <div className="flex flex-col space-y-4">
-                      <Link 
+                      {/* <Link 
                         href="/features" 
                         className="text-[#111827] hover:text-[#6366F1] transition-colors px-2 py-1"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Features
-                      </Link>
+                      </Link> */}
                       <Link 
-                        href="/pricing" 
+                        href="/" 
                         className="text-[#111827] hover:text-[#6366F1] transition-colors px-2 py-1"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Pricing
                       </Link>
                       <Link 
-                        href="/about" 
+                        href="/" 
                         className="text-[#111827] hover:text-[#6366F1] transition-colors px-2 py-1"
                         onClick={() => setMobileMenuOpen(false)}
                       >
