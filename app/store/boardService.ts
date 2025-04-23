@@ -68,27 +68,8 @@ export interface BoardApiResponse {
 // Fetch board by ID
 export async function fetchBoardById(boardId: string): Promise<Board> {
   try {
-    const { accessToken } = useAuthStore.getState();
-    
-    if (!accessToken) {
-      throw new Error('Authentication required');
-    }
-    
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    
-    const response = await fetch(`${apiUrl}/boards/${boardId}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch board: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data || data;
+    const response = await api.get(`/boards/${boardId}`);
+    return response.data.data || response.data;
   } catch (error) {
     console.error('Error fetching board:', error);
     throw error;
@@ -98,27 +79,8 @@ export async function fetchBoardById(boardId: string): Promise<Board> {
 // Fetch columns for a specific board
 export async function fetchColumnsByBoard(boardId: string): Promise<Column[]> {
   try {
-    const { accessToken } = useAuthStore.getState();
-    
-    if (!accessToken) {
-      throw new Error('Authentication required');
-    }
-    
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    
-    const response = await fetch(`${apiUrl}/columns/board/${boardId}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch columns: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data || data;
+    const response = await api.get(`/columns/board/${boardId}`);
+    return response.data.data || response.data;
   } catch (error) {
     console.error('Error fetching columns:', error);
     throw error;

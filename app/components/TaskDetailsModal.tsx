@@ -17,6 +17,7 @@ import { priorityConfig } from '@/app/utils/priorityConfig';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/app/components/ui/dropdown-menu';
 import { Button } from '@/app/components/ui/button';
 
+// Update the interface definition
 interface TaskDetailsModalProps {
   task: Task | null;
   open: boolean;
@@ -28,7 +29,7 @@ interface TaskDetailsModalProps {
   tasks: Record<string, any[]>;
   teamMembers: any[];
   assignedUser: any | null;
-  handleAssignTask: (taskId: string, userId: string | null) => void;
+  handleAssignTask: ((taskId: string, memberId: string | null) => void) | undefined;
 }
 
 const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
@@ -189,7 +190,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   
                   {task && (
                     <button 
-                      onClick={() => handleAssignTask(task._id, null)}
+                      onClick={() => handleAssignTask && handleAssignTask(task._id, null)}
                       className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       <X size={14} />
@@ -217,7 +218,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                       return (
                         <DropdownMenuItem 
                           key={memberId || Math.random().toString()}
-                          onClick={() => task && handleAssignTask(task._id, memberId)}
+                          onClick={() => task && handleAssignTask && handleAssignTask(task._id, memberId)}
                           className={isAssigned ? "bg-gray-100 dark:bg-gray-800" : ""}
                         >
                           <div className="flex items-center w-full">

@@ -2,8 +2,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import useAuthStore from './useAuthStore'; // Import normally
+import useAuthStore from './useAuthStore'; 
 import { shallow } from 'zustand/shallow';
+import api from '../utils/apiClient'; 
 
 // Modify your Task interface to make it compatible with boardService.Task
 export interface Task {
@@ -13,9 +14,9 @@ export interface Task {
   status?: string | 'pending' | 'in-progress' | 'completed' | 'blocked'; // Make this more flexible
   priority?: 'low' | 'medium' | 'high' | 'critical';
   position?: number;
-  column?: string; // Column ID
-  columnId?: string; // For compatibility with different API responses
-  boardId?: string; // Make this optional to accommodate boardService.Task
+  column?: string; 
+  columnId?: string; 
+  boardId?: string; 
   dueDate?: string;
   assignedTo?: string;
   createdAt?: string;
@@ -107,32 +108,13 @@ const useTaskStore = create<TaskState>()(
         set(state => ({ ...state, isLoading: true, error: null }));
         
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-          const accessToken = useAuthStore.getState().accessToken;
+          const response = await api.get(`/tasks/column/${columnId}`);
           
-          if (!accessToken) {
-            throw new Error('Authentication required');
-          }
-          
-          const response = await fetch(`${apiUrl}/tasks/column/${columnId}`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ 
-              message: `HTTP Error: ${response.status}` 
-            }));
-            throw new Error(errorData.message || 'Failed to fetch tasks');
-          }
-          
-          const data = await response.json();
+          // Axios automatically converts response to JSON
+          const data = response.data;
           const uniqueTasks = data.data.map((task: any) => ({
             ...task,
             column: columnId,
-            // Make sure both status indicators are in sync
             completed: task.status === 'completed' || task.completed === true,
             status: task.completed === true ? 'completed' : (task.status || 'pending')
           }));
@@ -151,7 +133,7 @@ const useTaskStore = create<TaskState>()(
           console.error(`Error fetching tasks for column ${columnId}:`, error);
           set(state => ({ 
             ...state, 
-            error: error.message || 'Failed to fetch tasks', 
+            error: error.response?.data?.message || error.message || 'Failed to fetch tasks', 
             isLoading: false 
           }));
           return [];
@@ -224,20 +206,11 @@ const useTaskStore = create<TaskState>()(
             };
           });
           
-          // Make API call to delete the task
-          const response = await fetch(`${apiUrl}/tasks/${taskId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          });
+          // Make API call to delete the task using axios instead of fetch
+          const response = await api.delete(`/tasks/${taskId}`);
           
-          if (!response.ok) {
-            // If API call fails, revert the optimistic update
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Failed to delete task: ${response.status}`);
-          }
+          // No need to check response.ok as axios throws on error status codes
+          return response.data;
         } catch (error: any) {
           console.error('Error deleting task:', error);
           // Fetch the column tasks again to revert any optimistic updates

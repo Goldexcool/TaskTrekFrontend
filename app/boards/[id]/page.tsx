@@ -16,6 +16,7 @@ import { useToast } from '@/app/hooks/useToast';
 import useAuthStore from '@/app/store/useAuthStore';
 import useTaskStore, { TaskState } from '@/app/store/useTaskStore';
 import { shallow } from 'zustand/shallow';
+import api from '../../utils/apiClient';
 
 // Components
 import AppLayout from '../../components/AppLayout';
@@ -1089,46 +1090,20 @@ const BoardPage: React.FC = () => {
         variant: "loading"
       });
       
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       let response;
       
       if (userId) {
-        // Use the dedicated assign endpoint
-        response = await fetch(`${apiUrl}/tasks/${taskId}/assign`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ userId })
-        });
+        // Use axios for the assign endpoint
+        response = await api.patch(`/tasks/${taskId}/assign`, { userId });
       } else {
-        // Use the dedicated unassign endpoint
-        response = await fetch(`${apiUrl}/tasks/${taskId}/unassign`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
+        // Use axios for the unassign endpoint
+        response = await api.patch(`/tasks/${taskId}/unassign`);
       }
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Assignment error response:', errorData);
-        
-        // Check if it's just already in the desired state
-        if (errorData?.message?.includes('already') || 
-            errorData?.message?.includes('already unassigned') || 
-            errorData?.message?.includes('already assigned')) {
-          // This isn't a critical error, so just update UI and return
-          console.log('Task is already in the requested assignment state');
-        } else {
-          throw new Error(userId ? "Failed to assign task" : "Failed to unassign task");
-        }
-      }
+      // Update local state (no need to check response.ok with axios)
+      const data = response.data;
       
-      // Update local state
-      // First find which column this task belongs to
+      // Find which column this task belongs to
       let sourceColumnId = null;
       Object.entries(tasks).forEach(([colId, colTasks]) => {
         if ((colTasks as any[]).some(t => t._id === taskId)) {
@@ -1149,7 +1124,7 @@ const BoardPage: React.FC = () => {
             ...selectedTask,
             assignedTo: userId || undefined,
             assignedAt: userId ? new Date().toISOString() : undefined
-          } as ExtendedTask);
+          } as ExtendedTask);  // Use type assertion to fix TypeScript error
         }
       }
       
@@ -1162,9 +1137,19 @@ const BoardPage: React.FC = () => {
       
     } catch (error: any) {
       console.error('Error managing task assignment:', error);
+      
+      // Better error handling with axios
+      const errorMessage = error.response?.data?.message || error.message || "Failed to update task assignment";
+      
+      // Check if it's "already" error, which we can ignore
+      if (errorMessage.includes('already')) {
+        console.log('Task is already in the requested assignment state');
+        return;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to update task assignment",
+        description: errorMessage,
         variant: "destructive"
       });
     }
