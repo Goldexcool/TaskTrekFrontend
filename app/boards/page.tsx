@@ -316,12 +316,10 @@ function BoardsContent() {
       );
     }
     
-    // Filter by starred status (if set)
     if (showStarredOnly) {
       filtered = filtered.filter(board => board.isStarred);
     }
     
-    // Then, sort the filtered results
     switch (sortOption) {
       case SortOption.NEWEST:
         filtered.sort((a, b) => {
@@ -362,10 +360,8 @@ function BoardsContent() {
   // Board stats
   const boardsStats = getBoardsStats();
   
-  // Filtered and sorted boards
   const filteredBoards = getFilteredAndSortedBoards();
 
-  // Focus search with keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -378,7 +374,6 @@ function BoardsContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Show login prompt if not authenticated
   if (!accessToken && !isLoading) {
     return (
       <AppLayout>
@@ -918,7 +913,6 @@ function BoardsContent() {
   );
 }
 
-// Wrap with Suspense for proper SSR behavior
 export default function BoardsPage() {
   return (
     <Suspense fallback={<div className="p-8 flex justify-center"><div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div></div>}>

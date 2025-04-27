@@ -564,7 +564,6 @@ const TeamDetailsPage: React.FC = () => {
   const confirmDeleteBoard = async (boardId: string): Promise<void> => {
     setBoardToDelete(boardId);
     setShowDeleteDialog(true);
-    // Return a resolved promise to match the expected return type
     return Promise.resolve();
   };
 
@@ -638,7 +637,6 @@ const TeamDetailsPage: React.FC = () => {
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      // Using direct API endpoint for adding members
       const response = await fetch(`${apiUrl}/teams/${team?._id}/members`, {
         method: 'POST',
         headers: {
@@ -681,11 +679,9 @@ const TeamDetailsPage: React.FC = () => {
         variant: "success"
       });
       
-      // Clear inputs and refresh team data
       setNewMemberEmail('');
       setNewMemberRole('member');
       
-      // Refresh team data to show new members
       if (team?._id) {
         // Fetch updated member list
         const updatedTeamResponse = await fetch(`${apiUrl}/teams/${team._id}`, {
@@ -712,12 +708,10 @@ const TeamDetailsPage: React.FC = () => {
     }
   };
   
-  // Email validation helper
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Fetch pending invitations
   const fetchPendingInvites = async () => {
     if (!team?._id) return;
     
@@ -740,15 +734,12 @@ const TeamDetailsPage: React.FC = () => {
       setPendingInvites(data.data || []);
     } catch (error) {
       console.error('Error fetching pending invites:', error);
-      // No need to show error toast here as it's not a critical operation
     } finally {
       setLoadingInvites(false);
     }
   };
 
-  // Filtered and sorted boards
   const filteredBoards = useMemo(() => {
-    // First filter by active tab
     let filtered = [...boards];
     
     if (activeTab === 'starred') {
@@ -763,7 +754,6 @@ const TeamDetailsPage: React.FC = () => {
         .slice(0, 5);
     }
     
-    // Then filter by search query
     return filtered
       .filter(board => {
         if (!searchQuery) return true;
@@ -788,12 +778,10 @@ const TeamDetailsPage: React.FC = () => {
       });
   }, [boards, searchQuery, sortBy, activeTab]);
 
-  // Function to check if user exists
   const checkUserExists = async (email: string): Promise<boolean> => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      // Using a GET request to check if user exists
       const response = await fetch(`${apiUrl}/users/check?email=${encodeURIComponent(email)}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -839,7 +827,6 @@ const TeamDetailsPage: React.FC = () => {
         variant: "success"
       });
       
-      // Update local team state
       if (team) {
         setTeam({
           ...team,
@@ -863,7 +850,6 @@ const TeamDetailsPage: React.FC = () => {
     }
   };
 
-  // Function to remove a team member
   const removeMember = async (userId: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -910,7 +896,6 @@ const TeamDetailsPage: React.FC = () => {
     }
   };
 
-  // Main data loading effect
   useEffect(() => {
     let isMounted = true;
 
@@ -929,7 +914,6 @@ const TeamDetailsPage: React.FC = () => {
           setTeam(teamData as unknown as TeamData);
           await fetchTeamBoards(teamData._id);
 
-          // Check if current user is the team owner or admin
           if (user) {
             const ownerId = typeof teamData.owner === 'string'
               ? teamData.owner : teamData.owner._id;
@@ -965,19 +949,16 @@ const TeamDetailsPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [params, router, user]);
 
-  // Handle edit navigation
   const handleEditTeam = () => {
     router.push(`/teams/create?edit=true&id=${team?._id}&name=${encodeURIComponent(team?.name || '')}&description=${encodeURIComponent(team?.description || '')}`);
   };
   
-  // Handle refreshing team data
   const handleRefresh = () => {
     if (refreshing || !team?._id) return;
     setRefreshing(true);
     fetchTeamBoards(team._id);
   };
 
-  // Fetch pending invites when membersTab changes or when a new invite is sent
   useEffect(() => {
     if (membersTab === 'pending' && team?._id) {
       fetchPendingInvites();
@@ -2219,7 +2200,6 @@ const TeamDetailsPage: React.FC = () => {
                               size="sm"
                               className="ml-2 text-red-500"
                               onClick={async () => {
-                                // Implement cancel invitation functionality
                                 try {
                                   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
                                   
@@ -2238,7 +2218,6 @@ const TeamDetailsPage: React.FC = () => {
                                       variant: "success"
                                     });
                                     
-                                    // Remove from list
                                     setPendingInvites(pendingInvites.filter(i => 
                                       (i.id !== invite.id) && (i._id !== invite._id)
                                     ));

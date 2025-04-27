@@ -127,17 +127,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const assignedUser = useMemo(() => {
-    // First check if we already have an assignedUser prop (fastest path)
     if (assignedUserProp) return assignedUserProp;
     
     // If no assignedTo, return null (early exit)
     if (!task.assignedTo) return null;
     
-    // If assignedTo is an object with _id, name, etc. (from API)
     if (typeof task.assignedTo === 'object' && task.assignedTo !== null) {
       const userObj = task.assignedTo as any;
       
-      // Return a compatible structure with only needed properties
       return {
         _id: userObj._id,
         name: userObj.name || userObj.username || 'User',
@@ -150,9 +147,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       } as TeamMember;
     }
     
-    // If assignedTo is a string ID, find in teamMembers with optimized search
     if (typeof task.assignedTo === 'string') {
-      // Use a map for faster lookup if teamMembers has many items
       return teamMembers.find(member => {
         const memberId = member.user?._id || member._id;
         return memberId === task.assignedTo;
@@ -162,14 +157,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
     return null;
   }, [task.assignedTo, teamMembers, assignedUserProp]);
 
-  // Add this debug logging inside your component, right after the assignedUser useMemo
   useEffect(() => {
     console.group(`TaskCard Debug - ${task._id}`);
     console.log('Task title:', task.title);
     console.log('assignedTo (raw):', task.assignedTo);
     console.log('assignedTo type:', typeof task.assignedTo);
     
-    // If it's an object, log its properties
     if (typeof task.assignedTo === 'object' && task.assignedTo !== null) {
       console.log('assignedTo object:', {
         _id: (task.assignedTo as any)._id,
@@ -205,7 +198,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             type="checkbox"
             checked={isCompleted}
             onChange={(e) => {
-              onStatusToggle(!isCompleted); // Pass the intended NEW state
+              onStatusToggle(!isCompleted); 
             }}
             className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600 dark:border-gray-600"
             onClick={(e) => e.stopPropagation()}
@@ -221,12 +214,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
       </div>
 
-      {/* Card content with strikethrough for completed tasks */}
       <div className={`px-3 pt-2 pb-1 ${isCompleted ? 'opacity-75' : ''}`} onClick={onClick}>
         <h4 className={`text-sm font-medium mb-1 ${isCompleted ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
           {task.title}
 
-          {/* Visual indication for completed tasks */}
           {isCompleted && (
             <span className="ml-2 inline-flex items-center">
               <CheckCircle size={14} className="text-green-500" />

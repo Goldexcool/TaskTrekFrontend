@@ -238,7 +238,6 @@ const taskLabels = [
   { name: 'Testing', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30', icon: <CheckCircle size={12} className="mr-1" /> }
 ];
 
-// View modes for board display
 enum BoardViewMode {
   Cards = 'cards',
   List = 'list',
@@ -246,7 +245,6 @@ enum BoardViewMode {
   Calendar = 'calendar'
 }
 
-// Different filter options
 interface FilterOptions {
   priority: string[];
   labels: string[];
@@ -508,7 +506,6 @@ const BoardPage: React.FC = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Set up sensors for drag and drop
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
@@ -526,13 +523,10 @@ const BoardPage: React.FC = () => {
     })
   );
 
-  // Add collision detection with improved algorithm
   const collisionDetectionStrategy: CollisionDetection = useCallback((args) => {
-    // First, detect any collisions with the pointer
     const pointerCollisions = pointerWithin(args);
 
     if (pointerCollisions.length > 0) {
-      // Return the most relevant intersection
       const closestCollisions = closestCorners(args);
       return closestCollisions.length > 0 ? [closestCollisions[0]] : [];
     }
@@ -540,7 +534,6 @@ const BoardPage: React.FC = () => {
     return closestCenter(args);
   }, []);
 
-  // Helper function to get team ID
   const getTeamId = (board: any): string => {
     if (!board) return '';
 
@@ -613,7 +606,6 @@ const BoardPage: React.FC = () => {
         const columnsData = await fetchColumnsByBoard(boardId);
 
         if (Array.isArray(columnsData)) {
-          // Sort columns by position
           const sortedColumns = [...columnsData].sort((a, b) => a.position - b.position);
           setColumns(sortedColumns);
 
@@ -927,13 +919,11 @@ const BoardPage: React.FC = () => {
       
       return actualTask;
     } catch (error: any) {
-      // On error, remove the temporary task
       const revertedTasks = { ...tasks };
       revertedTasks[columnId] = (revertedTasks[columnId] || []).filter(task => task._id !== tempId);
       
       setTasks(revertedTasks);
       
-      // Also revert the board stats
       setBoardStats(prev => ({
         ...prev,
         totalTasks: prev.totalTasks - 1,
@@ -985,14 +975,12 @@ const BoardPage: React.FC = () => {
 
       const newStatus: TaskStatus = isCompleted ? 'done' : 'pending';
 
-      // Update the task in the store first (optimistic update)
       updateTaskInStore(taskId, {
         status: newStatus,
         completed: isCompleted,
         completedAt: isCompleted ? new Date().toISOString() : undefined
       } as any);
 
-      // Update board stats for completion status
       setBoardStats(prev => ({
         ...prev,
         completedTasks: isCompleted
@@ -1060,7 +1048,6 @@ const BoardPage: React.FC = () => {
         completed: !isCompleted
       } as any);
 
-      // On error, refresh the column data to ensure UI consistency
       fetchTasksByColumn(columnId);
     }
   };
@@ -1093,7 +1080,6 @@ const BoardPage: React.FC = () => {
         variant: "success"
       });
 
-      // Add to activity log
       if (taskToDelete) {
         setBoardStats(prev => ({
           ...prev,
@@ -1149,10 +1135,8 @@ const BoardPage: React.FC = () => {
           assignedTo: userId || undefined
         };
         
-        // Update state immediately for responsive UI
         setTasks(updatedTasks);
         
-        // If task is selected, update that too
         if (selectedTask && selectedTask._id === taskId) {
           setSelectedTask({
             ...selectedTask,
@@ -1160,17 +1144,14 @@ const BoardPage: React.FC = () => {
           });
         }
         
-        // Notify all task subscribers
         notifyTaskUpdate(taskId);
       }
     }
     
-    // Now make the actual API call
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
       if (userId) {
-        // Assign the task
         const response = await fetch(`${apiUrl}/tasks/${taskId}/assign`, {
           method: 'PATCH',
           headers: {
@@ -1197,14 +1178,12 @@ const BoardPage: React.FC = () => {
         }
       }
       
-      // Show success message only after actual API success
       toast({
         title: "Success",
         description: userId ? "Task assigned successfully" : "Task unassigned successfully",
         variant: "success"
       });
     } catch (error) {
-      // On error, revert the optimistic update
       console.error("Error assigning task:", error);
       
       if (taskColumnId) {
@@ -1219,7 +1198,7 @@ const BoardPage: React.FC = () => {
           
           setTasks(revertedTasks);
           
-          // Revert selected task too if needed
+ 
           if (selectedTask && selectedTask._id === taskId) {
             setSelectedTask({
               ...selectedTask,
