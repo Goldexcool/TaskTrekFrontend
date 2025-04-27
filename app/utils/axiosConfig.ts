@@ -2,22 +2,32 @@
 import axios from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
+// Get the base URL from environment variables
+// Remove any trailing slashes to make path joining more predictable
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+
 // Create an axios instance
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || '',
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add the auth token
+// Add request interceptor for debugging
 apiClient.interceptors.request.use(
   (config) => {
-    const accessToken = useAuthStore.getState().accessToken;
+    // Log the full URL being requested (helpful for debugging)
+    console.log(`Making request to: ${config.baseURL}${config.url}`);
     
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    // Make sure we're not in SSR context
+    if (typeof window !== 'undefined') {
+      const accessToken = useAuthStore.getState().accessToken;
+      
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
     }
     
     return config;
@@ -48,10 +58,31 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // Log detailed information about the error
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    // Handle 404 errors specifically
+    if (error.response?.status === 404) {
+      console.error(`Endpoint not found: ${error.config?.baseURL}${error.config?.url}`);
+    }
+    
     const originalRequest = error.config;
     
+    // Skip refresh flow for specific endpoints to avoid loops
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/');
+    
     // If the error is due to invalid token and we're not already refreshing
-    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
+    // And we're not on an auth endpoint (to avoid refresh loops)
+    if (error.response?.status === 401 && 
+        !originalRequest._retry && 
+        !isRefreshing && 
+        !isAuthEndpoint) {
+      
       if (useAuthStore.getState().refreshToken) {
         originalRequest._retry = true;
         isRefreshing = true;
@@ -77,34 +108,45 @@ apiClient.interceptors.response.use(
             processQueue(error, null);
             isRefreshing = false;
             
-            // Redirect to login
-            if (typeof window !== 'undefined') {
-              window.location.href = '/signIn';
-            }
+            // Clear auth state before redirecting
+            useAuthStore.getState().logout();
             
-            return Promise.reject(error);
+            // Use next/router for client-side navigation instead of direct redirect
+            // This allows proper Next.js transitions
+            return Promise.reject({
+              ...error,
+              shouldRedirect: true,
+              redirectTo: '/signIn'
+            });
           }
         } catch (refreshError) {
           processQueue(refreshError, null);
           isRefreshing = false;
           
-          // Redirect to login after failed refresh
-          if (typeof window !== 'undefined') {
-            window.location.href = '/signIn';
-          }
+          // Clear auth state before redirecting
+          useAuthStore.getState().logout();
           
-          return Promise.reject(refreshError);
+          return Promise.reject({
+            ...error,
+            shouldRedirect: true,
+            redirectTo: '/signIn'
+          });
         }
       } else {
-        // No refresh token available, redirect to login
-        if (typeof window !== 'undefined') {
-          window.location.href = '/signIn';
-        }
+        // No refresh token available
+        // Clear auth state before redirecting
+        useAuthStore.getState().logout();
+        
+        return Promise.reject({
+          ...error,
+          shouldRedirect: true,
+          redirectTo: '/signIn'
+        });
       }
     }
     
     // If we're already refreshing, add this request to the queue
-    if (error.response?.status === 401 && isRefreshing) {
+    if (error.response?.status === 401 && isRefreshing && !isAuthEndpoint) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       }).then(token => {

@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AppLayout from '../components/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useToast } from '../components/ui/use-toast';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -21,15 +21,18 @@ import {
 import LoadingSpinner from '../components/LoadingSpinner';
 
 // Icons
-import { 
-  CheckSquare, Square, Flag, AlertCircle, MoreHorizontal, 
-  X, Plus, Search, Trash, Edit, Eye, Clock, 
+import {
+  CheckSquare, Square, Flag, AlertCircle, MoreHorizontal,
+  X, Plus, Search, Trash, Edit, Eye, Clock,
   ArrowUpRight, LayoutDashboard, Calendar, Check,
   Clipboard, Filter
 } from 'lucide-react';
 
 // Store
 import useAuthStore from '../store/useAuthStore';
+
+// Utils
+import apiClient from '../utils/axiosConfig';
 
 // Types
 interface TaskUser {
@@ -61,10 +64,17 @@ interface Task {
   priority?: 'low' | 'medium' | 'high' | 'critical';
   dueDate?: string;
   completed?: boolean;
+  isCompleted?: boolean;
   status?: string;
   board?: TaskBoard;
   column?: TaskColumn;
-  assignedTo?: TaskUser;
+  assignedTo?: string | {
+    _id: string;
+    name?: string;
+    username?: string;
+    email?: string;
+    avatar?: string;
+  } | null;
   createdBy?: TaskUser;
   labels?: string[];
   position?: number;
@@ -93,7 +103,7 @@ const containerVariants = {
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   show: {
-    y: 0, 
+    y: 0,
     opacity: 1,
     transition: {
       type: "spring",
@@ -132,7 +142,7 @@ function TasksLoadingFallback() {
           <div className="h-4 w-3/4 bg-gray-700 animate-pulse rounded-md"></div>
           <div className="h-4 w-1/2 bg-gray-700 animate-pulse rounded-md"></div>
         </div>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 flex flex-col space-y-2 animate-pulse">
@@ -141,7 +151,7 @@ function TasksLoadingFallback() {
             </div>
           ))}
         </div>
-        
+
         <div className="mt-8 flex justify-center">
           <LoadingSpinner size="lg" />
           <span className="ml-3 text-gray-400">Loading your tasks...</span>
@@ -157,12 +167,12 @@ function TasksContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, accessToken } = useAuthStore();
-  
+
   // State for tasks data
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // State for filters
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -173,18 +183,18 @@ function TasksContent() {
   const [assignedToMeFilter, setAssignedToMeFilter] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string>('dueDate');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'calendar' | 'gantt'>('list');
-  
+
   // State for task actions
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showTaskDetails, setShowTaskDetails] = useState<boolean>(false);
-  
+
   // State for advanced features
   const [teams, setTeams] = useState<any[]>([]);
   const [boards, setBoards] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('all');
-  
+
   // Fetch tasks on mount
   useEffect(() => {
     fetchTasks();
@@ -198,12 +208,12 @@ function TasksContent() {
       if (priority && ['low', 'medium', 'high', 'critical', 'all'].includes(priority)) {
         setPriorityFilter(priority);
       }
-      
+
       const dueDate = searchParams.get('dueDate');
       if (dueDate && ['today', 'week', 'month', 'overdue', 'all'].includes(dueDate)) {
         setDueDateFilter(dueDate);
       }
-      
+
       const completed = searchParams.get('completed');
       if (completed === 'true' || completed === 'false') {
         setCompletionFilter(completed === 'true' ? 'completed' : 'incomplete');
@@ -215,60 +225,48 @@ function TasksContent() {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!accessToken) {
         throw new Error('Authentication required');
       }
-      
+
       // Build query parameters for filtering
       const queryParams = new URLSearchParams();
-      
+
       if (priorityFilter !== 'all') {
         queryParams.append('priority', priorityFilter);
       }
-      
+
       if (dueDateFilter !== 'all') {
         queryParams.append('dueDate', dueDateFilter);
       }
-      
+
       if (completionFilter !== 'all') {
         queryParams.append('completed', completionFilter === 'completed' ? 'true' : 'false');
       }
-      
+
       if (selectedTeamFilter) {
         queryParams.append('teamId', selectedTeamFilter);
       }
-      
+
       if (selectedBoardFilter) {
         queryParams.append('boardId', selectedBoardFilter);
       }
-      
+
       if (assignedToMeFilter && user?.id) {
         queryParams.append('assignedTo', user.id);
       }
-      
-      // Fetch tasks from the API
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const url = `${apiUrl}/tasks/all${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
+
+      // Use the API client with correct endpoint (no /api prefix)
+      const url = `/tasks/all${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
       console.log('Fetching tasks from:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to load tasks: ${response.status}`);
-      }
-      
-      const responseData = await response.json();
+
+      const response = await apiClient.get(url);
+      const responseData = response.data;
+
       console.log('API Response:', responseData);
-      
+
       if (responseData.success && Array.isArray(responseData.data)) {
         setTasks(responseData.data);
       } else if (Array.isArray(responseData)) {
@@ -279,7 +277,7 @@ function TasksContent() {
     } catch (error: any) {
       console.error('Error loading tasks:', error);
       setError(typeof error === 'string' ? error : error.message || 'Failed to load tasks');
-      
+
       toast({
         title: "Error",
         description: "Failed to load tasks. Please try again.",
@@ -290,16 +288,16 @@ function TasksContent() {
       setRefreshing(false);
     }
   };
-  
+
   const fetchTeamsAndBoards = async () => {
     try {
       // Fetch teams data
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      
+
       if (!accessToken) {
         return;
       }
-      
+
       const [teamsResponse, boardsResponse] = await Promise.all([
         fetch(`${apiUrl}/teams`, {
           headers: {
@@ -314,12 +312,12 @@ function TasksContent() {
           }
         })
       ]);
-      
+
       if (teamsResponse.ok) {
         const teamsData = await teamsResponse.json();
         setTeams(Array.isArray(teamsData) ? teamsData : teamsData.data || []);
       }
-      
+
       if (boardsResponse.ok) {
         const boardsData = await boardsResponse.json();
         setBoards(Array.isArray(boardsData) ? boardsData : boardsData.data || []);
@@ -328,7 +326,7 @@ function TasksContent() {
       console.error('Error fetching teams/boards data:', error);
     }
   };
-  
+
   const handleRefresh = () => {
     setRefreshing(true);
     fetchTasks();
@@ -336,71 +334,78 @@ function TasksContent() {
 
   const handleToggleTaskCompletion = async (taskId: string, completed: boolean, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    
+
     try {
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId ? { ...task, completed: !completed } : task
-        )
+      // Get the correct ID (handle both id and _id)
+      const actualTaskId = taskId;
+
+      // Optimistically update UI - update both flags for consistency
+      setTasks(prevTasks =>
+        prevTasks.map(task => {
+          if (task.id === actualTaskId || task._id === actualTaskId) {
+            return {
+              ...task,
+              completed: !completed,
+              isCompleted: !completed,
+              status: !completed ? 'done' : 'todo'
+            };
+          }
+          return task;
+        })
       );
-      
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+      // Use apiClient with relative URLs, both using PATCH as required
       let endpoint;
-      let method;
-      
+
       if (completed) {
         // Reopening a completed task
-        endpoint = `/tasks/${taskId}/reopen`;
-        method = 'PUT';
+        endpoint = `/tasks/${actualTaskId}/reopen`;
       } else {
         // Completing a task
-        endpoint = `/tasks/${taskId}/complete`;
-        method = 'PATCH';
+        endpoint = `/tasks/${actualTaskId}/complete`;
       }
-      
-      console.log(`Using ${method} request to endpoint: ${apiUrl}${endpoint}`);
-      
-      const response = await fetch(`${apiUrl}${endpoint}`, {
-        method: method,
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+
+      console.log(`Using PATCH request to endpoint: ${endpoint}`);
+
+      // Use apiClient with PATCH method for both operations
+      const response = await apiClient({
+        url: endpoint,
+        method: 'PATCH',
+        data: {
           completed: !completed,
-          status: !completed ? 'completed' : 'in_progress' 
-        })
-      });
-      
-      // Check if response is not OK
-      if (!response.ok) {
-        // Revert changes if the API call fails
-        setTasks(prevTasks => 
-          prevTasks.map(task => 
-            task.id === taskId ? { ...task, completed } : task
-          )
-        );
-        
-        // Get the error details from the response
-        let errorMessage;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || `Error updating task: ${response.status}`;
-        } catch (e) {
-          errorMessage = `Error updating task: ${response.status}`;
+          status: !completed ? 'done' : 'todo'
         }
-        
-        throw new Error(errorMessage);
-      }
-      
+      });
+
+      // Handle the response
+      console.log('Task update response:', response.data);
+
       // If successful, show success toast
       toast({
         title: completed ? "Task Reopened" : "Task Completed",
         description: completed ? "Task has been marked as incomplete" : "Task has been marked as completed",
         variant: "success"
       });
+
+      // Refresh the task list to ensure we have the latest data
+      fetchTasks();
     } catch (error: any) {
       console.error('Error toggling task completion:', error);
+
+      // Revert UI changes in case of error
+      setTasks(prevTasks =>
+        prevTasks.map(task => {
+          if (task.id === taskId || task._id === taskId) {
+            return {
+              ...task,
+              completed: completed,
+              isCompleted: completed
+            };
+          }
+          return task;
+        })
+      );
+
       toast({
         title: "Error",
         description: typeof error === 'string' ? error : error.message || 'Failed to update task status',
@@ -408,16 +413,16 @@ function TasksContent() {
       });
     }
   };
-  
+
   const handleDeleteTask = async (taskId: string) => {
     if (!confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
       return;
     }
-    
+
     try {
       // Optimistically update UI
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-      
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId && task._id !== taskId));
+
       // Make API call to delete the task
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${apiUrl}/tasks/${taskId}`, {
@@ -427,16 +432,13 @@ function TasksContent() {
           'Content-Type': 'application/json',
         }
       });
-      
+
       if (!response.ok) {
         // Restore the task in UI if deletion failed
         fetchTasks(); // Re-fetch all tasks
-        
-        // Get error message
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to delete task: ${response.status}`);
+        throw new Error(`Failed to delete task: ${response.status}`);
       }
-      
+
       toast({
         title: "Success",
         description: "Task deleted successfully",
@@ -451,59 +453,60 @@ function TasksContent() {
       });
     }
   };
-  
+
   // Filter and sort tasks
   const filteredTasks = useMemo(() => {
     return tasks
       .filter(task => {
-        // Text search
+        const isTaskCompleted = task.completed || task.isCompleted;
+
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
           const matchesTitle = task.title?.toLowerCase().includes(query);
           const matchesDescription = task.description?.toLowerCase().includes(query);
-          
+
           if (!matchesTitle && !matchesDescription) {
             return false;
           }
         }
-        
+
         // Tab filtering
         if (activeTab === 'today') {
           if (!task.dueDate) return false;
-          
+
           const dueDate = new Date(task.dueDate);
           const today = new Date();
           return dueDate.toDateString() === today.toDateString();
         }
-        
+
         if (activeTab === 'upcoming') {
           if (!task.dueDate) return false;
-          
+
           const dueDate = new Date(task.dueDate);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          
+
           const nextWeek = new Date(today);
           nextWeek.setDate(today.getDate() + 7);
-          
+
           return dueDate >= today && dueDate <= nextWeek;
         }
-        
+
         if (activeTab === 'overdue') {
           if (!task.dueDate) return false;
-          if (task.completed) return false;
-          
+          if (isTaskCompleted) return false;
+
           const dueDate = new Date(task.dueDate);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          
+
           return dueDate < today;
         }
-        
+
         if (activeTab === 'completed') {
-          return !!task.completed;
+          return isTaskCompleted;
         }
-        
+
         return true;
       })
       .sort((a, b) => {
@@ -512,17 +515,17 @@ function TasksContent() {
             if (!a.dueDate) return 1;
             if (!b.dueDate) return -1;
             return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-          
+
           case 'priority':
             const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
             const aPriority = a.priority || 'low';
             const bPriority = b.priority || 'low';
-            return (priorityOrder[aPriority as keyof typeof priorityOrder] || 4) - 
-                   (priorityOrder[bPriority as keyof typeof priorityOrder] || 4);
-            
+            return (priorityOrder[aPriority as keyof typeof priorityOrder] || 4) -
+              (priorityOrder[bPriority as keyof typeof priorityOrder] || 4);
+
           case 'title':
             return (a.title || '').localeCompare(b.title || '');
-            
+
           case 'createdAt':
             if (!a.createdAt) return 1;
             if (!b.createdAt) return -1;
@@ -533,65 +536,65 @@ function TasksContent() {
         }
       });
   }, [tasks, searchQuery, sortBy, activeTab]);
-  
+
   // Group tasks by board
   const tasksByBoard = useMemo(() => {
     const groupedTasks: Record<string, { board: any, tasks: Task[] }> = {};
-    
+
     filteredTasks.forEach(task => {
       if (!task.board?.id) return;
-      
+
       const boardId = task.board.id;
-      
+
       if (!groupedTasks[boardId]) {
         groupedTasks[boardId] = {
           board: task.board,
           tasks: []
         };
       }
-      
+
       groupedTasks[boardId].tasks.push(task);
     });
-    
+
     return Object.values(groupedTasks);
   }, [filteredTasks]);
-  
+
   // Task stats
   const taskStats = useMemo(() => {
     const total = tasks.length;
-    const completed = tasks.filter(task => task.completed).length;
-    const overdue = tasks.filter(task => !task.completed && task.isOverdue).length;
+    const completed = tasks.filter(task => task.completed || task.isCompleted).length;
+    const overdue = tasks.filter(task => !(task.completed || task.isCompleted) && task.isOverdue).length;
     const today = tasks.filter(task => {
       if (!task.dueDate) return false;
       const dueDate = new Date(task.dueDate);
       const now = new Date();
       return dueDate.toDateString() === now.toDateString();
     }).length;
-    
+
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
+
     return { total, completed, overdue, today, completionRate };
   }, [tasks]);
-  
+
   // Format date for display
   const formatDate = (dateString?: string): string => {
     if (!dateString) return 'No due date';
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
-    
+
     // Reset now to midnight for tomorrow comparison
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    
+
     const tomorrowEnd = new Date(tomorrow);
     tomorrowEnd.setHours(23, 59, 59, 999);
-    
+
     const isTomorrow = date >= tomorrow && date <= tomorrowEnd;
     const isOverdue = date < now && !isToday;
-    
+
     // Format the date based on how far it is
     if (isToday) {
       return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -603,22 +606,22 @@ function TasksContent() {
       return date.toLocaleDateString();
     }
   };
-  
+
   // Check if a date is overdue
   const isOverdue = (dateString?: string): boolean => {
     if (!dateString) return false;
-    
+
     const date = new Date(dateString);
     const now = new Date();
-    
+
     return date < now && date.toDateString() !== now.toDateString();
   };
-  
+
   // Loading view with improved visual experience
   if (loading) {
     return <TasksLoadingFallback />;
   }
-  
+
   // Error view with retry
   if (error) {
     return (
@@ -629,7 +632,7 @@ function TasksContent() {
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">Failed to load tasks</h3>
           <p className="text-gray-400 text-center mb-6 max-w-md">{error}</p>
-          <button 
+          <button
             onClick={fetchTasks}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
           >
@@ -639,12 +642,12 @@ function TasksContent() {
       </AppLayout>
     );
   }
-  
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -655,7 +658,7 @@ function TasksContent() {
               <CheckSquare className="h-8 w-8 mr-3 text-indigo-500" />
               My Tasks
             </h1>
-            
+
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -669,21 +672,21 @@ function TasksContent() {
                   <Plus className="h-4 w-4 ml-2" />
                 )}
               </button>
-              
+
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
                 className="flex items-center px-3 py-2 rounded-lg border border-gray-700 bg-gray-800/50 hover:bg-gray-700/70 text-gray-300"
               >
                 <svg className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} viewBox="0 0 24 24">
-                  <path 
-                    fill="currentColor" 
-                    d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" 
+                  <path
+                    fill="currentColor"
+                    d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
                   />
                 </svg>
                 {refreshing ? 'Refreshing...' : 'Refresh'}
               </button>
-              
+
               <Link
                 href="/boards"
                 className="flex items-center px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
@@ -693,14 +696,14 @@ function TasksContent() {
               </Link>
             </div>
           </div>
-          
+
           <p className="mt-2 text-gray-400">
             Organize, track and complete tasks across all your projects
           </p>
-          
+
           {/* Task Statistics */}
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
@@ -712,8 +715,8 @@ function TasksContent() {
                 Total Tasks
               </div>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
@@ -728,8 +731,8 @@ function TasksContent() {
                 Completion Rate
               </div>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
@@ -741,8 +744,8 @@ function TasksContent() {
                 Completed
               </div>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 }}
@@ -754,8 +757,8 @@ function TasksContent() {
                 Due Today
               </div>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5 }}
@@ -769,11 +772,11 @@ function TasksContent() {
             </motion.div>
           </div>
         </motion.div>
-        
+
         {/* Tabs */}
         <div className="mb-6">
-          <Tabs 
-            value={activeTab} 
+          <Tabs
+            value={activeTab}
             onValueChange={setActiveTab}
             className="w-full"
           >
@@ -801,11 +804,11 @@ function TasksContent() {
             </TabsList>
           </Tabs>
         </div>
-        
+
         {/* Filters and Controls */}
         <AnimatePresence>
           {showFilters && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -818,7 +821,7 @@ function TasksContent() {
                       <label className="block mb-2 text-sm font-medium text-gray-400">Search</label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                        <input 
+                        <input
                           type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
@@ -827,7 +830,7 @@ function TasksContent() {
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-400">Priority</label>
                       <select
@@ -842,7 +845,7 @@ function TasksContent() {
                         <option value="critical">Critical</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-400">Due Date</label>
                       <select
@@ -859,7 +862,7 @@ function TasksContent() {
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-400">Completion Status</label>
@@ -873,7 +876,7 @@ function TasksContent() {
                         <option value="incomplete">Incomplete</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-400">Sort By</label>
                       <select
@@ -887,7 +890,7 @@ function TasksContent() {
                         <option value="createdAt">Creation Date</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-400">View Mode</label>
                       <select
@@ -900,18 +903,18 @@ function TasksContent() {
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={assignedToMeFilter}
                         onChange={() => setAssignedToMeFilter(!assignedToMeFilter)}
                         className="form-checkbox h-4 w-4 bg-gray-700 border-gray-600 rounded text-indigo-600 focus:ring-indigo-500"
                       />
                       <span className="text-gray-400">Only tasks assigned to me</span>
                     </label>
-                    
+
                     <button
                       onClick={() => {
                         setSearchQuery('');
@@ -932,7 +935,7 @@ function TasksContent() {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* No tasks state */}
         {filteredTasks.length === 0 && (
           <motion.div
@@ -944,21 +947,21 @@ function TasksContent() {
               <CheckSquare className="h-10 w-10 text-white" />
             </div>
             <h3 className="text-xl font-bold text-white mb-3">
-              {searchQuery || priorityFilter !== 'all' || dueDateFilter !== 'all' || 
-              completionFilter !== 'all' || selectedTeamFilter || selectedBoardFilter || assignedToMeFilter
-                ? 'No tasks match your filters' 
+              {searchQuery || priorityFilter !== 'all' || dueDateFilter !== 'all' ||
+                completionFilter !== 'all' || selectedTeamFilter || selectedBoardFilter || assignedToMeFilter
+                ? 'No tasks match your filters'
                 : 'You don\'t have any tasks yet'}
             </h3>
             <p className="text-gray-400 max-w-md mx-auto mb-8">
-              {searchQuery || priorityFilter !== 'all' || dueDateFilter !== 'all' || 
-              completionFilter !== 'all' || selectedTeamFilter || selectedBoardFilter || assignedToMeFilter
-                ? 'Try adjusting your search or filters to find what you\'re looking for.' 
+              {searchQuery || priorityFilter !== 'all' || dueDateFilter !== 'all' ||
+                completionFilter !== 'all' || selectedTeamFilter || selectedBoardFilter || assignedToMeFilter
+                ? 'Try adjusting your search or filters to find what you\'re looking for.'
                 : 'Create your first task to start organizing your work.'}
             </p>
-            
+
             <div className="flex justify-center space-x-4">
-              {searchQuery || priorityFilter !== 'all' || dueDateFilter !== 'all' || 
-              completionFilter !== 'all' || selectedTeamFilter || selectedBoardFilter ? (
+              {searchQuery || priorityFilter !== 'all' || dueDateFilter !== 'all' ||
+                completionFilter !== 'all' || selectedTeamFilter || selectedBoardFilter ? (
                 <button
                   onClick={() => {
                     setSearchQuery('');
@@ -975,7 +978,7 @@ function TasksContent() {
                   Clear Filters
                 </button>
               ) : (
-                <Link 
+                <Link
                   href="/boards"
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                 >
@@ -986,7 +989,7 @@ function TasksContent() {
             </div>
           </motion.div>
         )}
-        
+
         {/* List view */}
         {filteredTasks.length > 0 && viewMode === 'list' && (
           <motion.div
@@ -1024,31 +1027,29 @@ function TasksContent() {
                 </thead>
                 <tbody className="bg-gray-800 divide-y divide-gray-700">
                   {filteredTasks.map(task => (
-                    <motion.tr 
-                      key={task.id}
+                    <motion.tr
+                      key={task._id}
                       variants={itemVariants}
-                      className={`hover:bg-gray-700 transition-colors ${
-                        task.completed ? 'bg-gray-800/50' : ''
-                      }`}
+                      className={`hover:bg-gray-700 transition-colors ${task.completed || task.isCompleted ? 'opacity-60' : ''
+                        }`}
                     >
                       <td className="px-3 py-4 whitespace-nowrap">
                         <button
-                          onClick={() => task.id && handleToggleTaskCompletion(task.id, !!task.completed)}
-                          className={`p-1.5 rounded-md hover:bg-gray-700 ${
-                            task.completed 
-                              ? 'text-green-500' 
+                          onClick={() => handleToggleTaskCompletion(task._id || task.id || '', !!task.completed)}
+                          className={`p-1.5 rounded-md hover:bg-gray-700 ${task.completed || task.isCompleted
+                              ? 'text-green-500'
                               : 'text-gray-500 hover:text-white'
-                          }`}
-                          aria-label={task.completed ? "Mark as incomplete" : "Mark as complete"}
+                            }`}
+                          aria-label={task.completed || task.isCompleted ? "Mark as incomplete" : "Mark as complete"}
                         >
-                          {task.completed 
+                          {task.completed || task.isCompleted
                             ? <CheckSquare className="h-5 w-5" />
                             : <Square className="h-5 w-5" />
                           }
                         </button>
                       </td>
                       <td className="px-3 py-4">
-                        <div className={`flex flex-col ${task.completed ? 'line-through text-gray-500' : 'text-white'}`}>
+                        <div className={`flex flex-col ${task.completed || task.isCompleted ? 'line-through text-gray-500' : 'text-white'}`}>
                           <span className="font-medium">{task.title}</span>
                           {task.description && (
                             <span className="text-xs text-gray-400 mt-1 truncate max-w-xs">
@@ -1066,19 +1067,18 @@ function TasksContent() {
                         )}
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap">
-                        <span className={`text-sm ${
-                          isOverdue(task.dueDate) && !task.completed
-                            ? 'text-red-400' 
+                        <span className={`text-sm ${isOverdue(task.dueDate) && !(task.completed || task.isCompleted)
+                            ? 'text-red-400'
                             : 'text-gray-300'
-                        }`}>
+                          }`}>
                           {formatDate(task.dueDate)}
                         </span>
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap">
                         {task.board ? (
                           <span className="inline-flex items-center">
-                            <span 
-                              className="w-2 h-2 rounded-full mr-2" 
+                            <span
+                              className="w-2 h-2 rounded-full mr-2"
                               style={{ backgroundColor: task.board.backgroundColor || '#6366F1' }}
                             ></span>
                             <span className="text-sm text-gray-300">{task.board.title}</span>
@@ -1089,21 +1089,24 @@ function TasksContent() {
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap">
                         {task.assignedTo ? (
-
-                          <div className="flex items-center">
-                            {task.assignedTo.avatar ? (
-                              <img 
-                                src={task.assignedTo.avatar} 
-                                alt={task.assignedTo.name || ''} 
-                                className="h-6 w-6 rounded-full mr-2"
-                              />
-                            ) : (
-                              <div className="h-6 w-6 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-300 text-xs font-medium mr-2">
-                                {task.assignedTo.name?.substring(0, 1).toUpperCase() || 'U'}
-                              </div>
-                            )}
-                            <span className="text-sm text-gray-300">{task.assignedTo.name}</span>
-                          </div>
+                          typeof task.assignedTo === 'string' ? (
+                            <span className="text-sm text-gray-300">{task.assignedTo}</span>
+                          ) : (
+                            <div className="flex items-center">
+                              {task.assignedTo.avatar ? (
+                                <img
+                                  src={task.assignedTo.avatar}
+                                  alt={task.assignedTo.name || ''}
+                                  className="h-6 w-6 rounded-full mr-2"
+                                />
+                              ) : (
+                                <div className="h-6 w-6 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-300 text-xs font-medium mr-2">
+                                  {task.assignedTo.name?.substring(0, 1).toUpperCase() || 'U'}
+                                </div>
+                              )}
+                              <span className="text-sm text-gray-300">{task.assignedTo.name}</span>
+                            </div>
+                          )
                         ) : (
                           <span className="text-xs text-gray-500">Unassigned</span>
                         )}
@@ -1116,7 +1119,7 @@ function TasksContent() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-36 bg-gray-800 border border-gray-700">
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => {
                                 setSelectedTask(task);
                                 setShowTaskDetails(true);
@@ -1125,17 +1128,17 @@ function TasksContent() {
                             >
                               <Eye className="h-4 w-4 mr-2" /> View
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => task.board?.id && router.push(`/boards/${task.board.id}?task=${task.id}`)}
                               className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
                             >
                               <Edit className="h-4 w-4 mr-2" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => task.id && handleToggleTaskCompletion(task.id, !!task.completed)}
+                            <DropdownMenuItem
+                              onClick={() => handleToggleTaskCompletion(task._id || task.id || '', !!task.completed || !!task.isCompleted)}
                               className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
                             >
-                              {task.completed ? (
+                              {task.completed || task.isCompleted ? (
                                 <>
                                   <Square className="h-4 w-4 mr-2" /> Mark Incomplete
                                 </>
@@ -1145,8 +1148,8 @@ function TasksContent() {
                                 </>
                               )}
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => task.id && handleDeleteTask(task.id)}
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteTask(task._id || task.id || '')}
                               className="hover:bg-red-900/50 text-red-400 hover:text-red-300 cursor-pointer"
                             >
                               <Trash className="h-4 w-4 mr-2" /> Delete
@@ -1161,7 +1164,7 @@ function TasksContent() {
             </div>
           </motion.div>
         )}
-        
+
         {/* Kanban board view */}
         {filteredTasks.length > 0 && viewMode === 'kanban' && (
           <motion.div
@@ -1181,7 +1184,7 @@ function TasksContent() {
                     <Clipboard className="h-4 w-4 mr-2" />
                     {board.title || 'Unknown Board'}
                   </h3>
-                  <Link 
+                  <Link
                     href={`/boards/${board.id}`}
                     className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
                   >
@@ -1193,35 +1196,32 @@ function TasksContent() {
                     <motion.div
                       key={task.id}
                       variants={itemVariants}
-                      className={`mb-3 p-3 rounded-lg border ${
-                        task.completed
+                      className={`mb-3 p-3 rounded-lg border ${task.completed || task.isCompleted
                           ? 'border-gray-700 bg-gray-700/30'
                           : 'border-gray-700 bg-gray-800/80'
-                      } hover:shadow-md transition-all`}
+                        } hover:shadow-md transition-all`}
                     >
                       <div className="flex items-start">
                         <button
-                          onClick={(e) => task.id && handleToggleTaskCompletion(task.id, !!task.completed, e)}
-                          className={`p-1 rounded-md mt-0.5 hover:bg-gray-700 ${
-                            task.completed 
-                              ? 'text-green-500' 
+                          onClick={() => handleToggleTaskCompletion(task._id || task.id || '', !!task.completed || !!task.isCompleted)}
+                          className={`p-1.5 rounded-md hover:bg-gray-700 ${task.completed || task.isCompleted
+                              ? 'text-green-500'
                               : 'text-gray-500 hover:text-white'
-                          }`}
-                          aria-label={task.completed ? "Mark as incomplete" : "Mark as complete"}
+                            }`}
+                          aria-label={task.completed || task.isCompleted ? "Mark as incomplete" : "Mark as complete"}
                         >
-                          {task.completed 
-                            ? <CheckSquare className="h-4 w-4" />
-                            : <Square className="h-4 w-4" />
+                          {task.completed || task.isCompleted
+                            ? <CheckSquare className="h-5 w-5" />
+                            : <Square className="h-5 w-5" />
                           }
                         </button>
                         <div className="ml-2 flex-grow">
                           <div className="flex justify-between items-start">
-                            <h4 
-                              className={`text-sm font-medium ${
-                                task.completed
+                            <h4
+                              className={`text-sm font-medium ${task.completed || task.isCompleted
                                   ? 'text-gray-400 line-through'
                                   : 'text-white'
-                              }`}
+                                }`}
                             >
                               {task.title}
                             </h4>
@@ -1232,7 +1232,7 @@ function TasksContent() {
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-36 bg-gray-800 border border-gray-700">
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedTask(task);
                                     setShowTaskDetails(true);
@@ -1241,17 +1241,17 @@ function TasksContent() {
                                 >
                                   <Eye className="h-4 w-4 mr-2" /> View
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={() => task.board?.id && router.push(`/boards/${task.board.id}?task=${task.id}`)}
                                   className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
                                 >
                                   <Edit className="h-4 w-4 mr-2" /> Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={(e) => task.id && handleToggleTaskCompletion(task.id, !!task.completed, e)}
                                   className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
                                 >
-                                  {task.completed ? (
+                                  {task.completed || task.isCompleted ? (
                                     <>
                                       <Square className="h-4 w-4 mr-2" /> Mark Incomplete
                                     </>
@@ -1261,8 +1261,8 @@ function TasksContent() {
                                     </>
                                   )}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => task.id && handleDeleteTask(task.id)}
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteTask(task._id || task.id || '')}
                                   className="hover:bg-red-900/50 text-red-400 hover:text-red-300 cursor-pointer"
                                 >
                                   <Trash className="h-4 w-4 mr-2" /> Delete
@@ -1270,13 +1270,13 @@ function TasksContent() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                          
+
                           {task.description && (
                             <p className="text-xs text-gray-400 mt-1 line-clamp-2">
                               {task.description}
                             </p>
                           )}
-                          
+
                           <div className="mt-2 flex justify-between items-center text-xs">
                             <div className="space-x-2">
                               {task.priority && (
@@ -1285,44 +1285,47 @@ function TasksContent() {
                                   <span className="ml-1 capitalize">{task.priority}</span>
                                 </span>
                               )}
-                              
+
                               {task.dueDate && (
-                                <span className={`inline-flex items-center ${
-                                  isOverdue(task.dueDate) && !task.completed
-                                    ? 'text-red-400' 
+                                <span className={`inline-flex items-center ${isOverdue(task.dueDate) && !(task.completed || task.isCompleted)
+                                    ? 'text-red-400'
                                     : 'text-gray-400'
-                                }`}>
+                                  }`}>
                                   <Clock className="h-3 w-3 mr-1" />
                                   {formatDate(task.dueDate)}
                                 </span>
                               )}
                             </div>
-                            
+
                             {task.assignedTo && (
-                              <div className="flex items-center text-gray-400">
-                                {task.assignedTo.avatar ? (
-                                  <img 
-                                    src={task.assignedTo.avatar} 
-                                    alt={task.assignedTo.name || ''} 
-                                    className="h-4 w-4 rounded-full"
-                                    title={task.assignedTo.name || ''}
-                                  />
-                                ) : (
-                                  <div 
-                                    className="h-4 w-4 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-300 text-[10px] font-medium"
-                                    title={task.assignedTo.name || ''}
-                                  >
-                                    {task.assignedTo.name?.substring(0, 1).toUpperCase() || 'U'}
-                                  </div>
-                                )}
-                              </div>
+                              typeof task.assignedTo === 'string' ? (
+                                <span className="text-xs text-gray-400">{task.assignedTo}</span>
+                              ) : (
+                                <div className="flex items-center text-gray-400">
+                                  {task.assignedTo.avatar ? (
+                                    <img
+                                      src={task.assignedTo.avatar}
+                                      alt={task.assignedTo.name || ''}
+                                      className="h-4 w-4 rounded-full"
+                                      title={task.assignedTo.name || ''}
+                                    />
+                                  ) : (
+                                    <div
+                                      className="h-4 w-4 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-300 text-[10px] font-medium"
+                                      title={task.assignedTo.name || ''}
+                                    >
+                                      {task.assignedTo.name?.substring(0, 1).toUpperCase() || 'U'}
+                                    </div>
+                                  )}
+                                </div>
+                              )
                             )}
                           </div>
-                          
+
                           {task.labels && task.labels.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">
                               {task.labels.slice(0, 3).map((label, idx) => (
-                                <span 
+                                <span
                                   key={idx}
                                   className="px-1.5 py-0.5 text-[10px] rounded-full bg-indigo-900/50 text-indigo-300 border border-indigo-800/50"
                                 >

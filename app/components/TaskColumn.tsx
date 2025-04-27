@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, Plus, MoreHorizontal, PlusCircle, Trash2, Clipboard } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../components/ui/dropdown-menu';
 import SortableTaskCard from './SortableTaskCard'
-import { Task } from '@/app/types/board';
+import { Task } from '@/app/types/task';
 
 interface Column {
   _id: string;
@@ -36,6 +36,8 @@ const TaskColumn: React.FC<{
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showTaskDetails, setShowTaskDetails] = useState(false);
 
   const isActiveColumn = activeColumn === column._id;
 
@@ -54,6 +56,11 @@ const TaskColumn: React.FC<{
       setNewTaskDueDate('');
       setActiveColumn(null);
     }
+  };
+
+  const handleSelectTask = (task: Task) => {
+    setSelectedTask(task);
+    setShowTaskDetails(true);
   };
 
   const totalTasks = tasks.length;
@@ -211,10 +218,11 @@ const TaskColumn: React.FC<{
                 task={task}
                 columnId={column._id}
                 onMoveTask={onMoveTask}
-                onSelectTask={onSelectTask}
+                onSelectTask={handleSelectTask}
                 onToggleTaskCompletion={onToggleTaskCompletion}
-                activeTaskId={activeTaskId}
-                setActiveTaskId={setActiveTaskId}
+                // Remove these props or make sure they're defined in SortableTaskCard component
+                // activeTaskId={activeTaskId}
+                // setActiveTaskId={setActiveTaskId}p
               />
             ))}
           </motion.div>

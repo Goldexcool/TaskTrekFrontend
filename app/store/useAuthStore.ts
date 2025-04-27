@@ -24,8 +24,6 @@ interface AuthState {
   clearError: () => void;
 }
 
-let refreshPromise: Promise<boolean> | null = null;
-
 const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -71,7 +69,7 @@ const useAuthStore = create<AuthState>()(
       },
       
       logout: () => {
-        // Remove token from axios defaults
+        // Clear all auth data
         delete axios.defaults.headers.common['Authorization'];
         
         set({
@@ -120,78 +118,45 @@ const useAuthStore = create<AuthState>()(
         }
       },
       
-      refreshAccessToken: async () => {
-        const { refreshToken, isRefreshing } = get();
-        
-        // If already refreshing, return the existing promise
-        if (isRefreshing && refreshPromise) {
-          return refreshPromise;
-        }
+      refreshAccessToken: async (): Promise<boolean> => {
+        const refreshToken = get().refreshToken;
         
         if (!refreshToken) {
-          console.warn('No refresh token available');
           return false;
         }
         
-        // Set refreshing state
-        set({ isRefreshing: true });
-        
-        // Create a new refresh promise
-        refreshPromise = (async () => {
-          try {
-            console.log('Attempting to refresh access token...');
-            
-            const response = await axios.post(
-              `${API_BASE_URL}/auth/refresh-token`,
-              { refreshToken },
-              { 
-                headers: { 'Content-Type': 'application/json' }
-              }
-            );
-            
-            if (!response.data.accessToken) {
-              throw new Error('No access token received');
-            }
-            
-            const { accessToken, refreshToken: newRefreshToken } = response.data;
-            
-            console.log('Token refreshed successfully');
-            
-            set({
-              accessToken,
-              // Update refresh token if a new one was provided
-              refreshToken: newRefreshToken || refreshToken,
-              isAuthenticated: true,
-              isRefreshing: false
-            });
-            
-            // Update the token in axios defaults
-            axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-            
-            return true;
-          } catch (error: any) {
-            console.error('Failed to refresh token:', error);
-            
-            // Clear auth state on refresh failure
-            set({
-              user: null,
-              accessToken: null,
-              refreshToken: null,
-              isAuthenticated: false,
-              isRefreshing: false,
-              error: 'Authentication expired. Please login again.'
-            });
-            
-            // Remove token from axios defaults
-            delete axios.defaults.headers.common['Authorization'];
-            
-            return false;
-          } finally {
-            refreshPromise = null;
+        try {
+          set({ isLoading: true });
+          
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          const response = await fetch(`${apiUrl}/auth/refresh`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refreshToken }),
+          });
+          
+          if (!response.ok) {
+            throw new Error('Token refresh failed');
           }
-        })();
-        
-        return refreshPromise;
+          
+          const data = await response.json();
+          
+          // Update auth state with new tokens
+          set({
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken || get().refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          
+          return true;
+        } catch (error) {
+          console.error('Error refreshing token:', error);
+          set({ isLoading: false });
+          return false;
+        }
       },
       
       forgotPassword: async (email: string) => {
@@ -262,7 +227,14 @@ const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage', // Name for the persisted data
+      name: 'auth-storage',
+      // Only persist these fields
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
+      })
     }
   )
 );
@@ -302,4 +274,4 @@ if (typeof window !== 'undefined') {
   initializeAuth();
 }
 
-export default useAuthStore
+export default useAuthStore;

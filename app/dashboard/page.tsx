@@ -3,13 +3,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Plus, ArrowRight, Clock, Calendar, Star, AlertCircle,
   CheckSquare, MoreHorizontal, Users, Layers, Activity,
-  PieChart, TrendingUp, FileText, Edit, Trash2
+  PieChart, TrendingUp, FileText, Edit, Trash2, Filter, X, Search, Square
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import HeaderDash from '../components/HeaderDash';
 import { fetchTeams, Team, deleteTeam } from '../store/teamService';
 import { fetchUserTasks, Task } from '../store/useTaskStore';
@@ -19,6 +20,7 @@ import { format } from 'timeago.js';
 import useActivityStore, { ActivityItem } from '../store/activityStore';
 import { Board } from '../store/boardService';
 import AppLayout from '../components/AppLayout';
+import apiClient from '../utils/apiClient'; // Assuming apiClient is imported from utils
 
 // API response interfaces
 interface TeamApiResponse {
@@ -27,17 +29,19 @@ interface TeamApiResponse {
   data?: Team[];
 }
 
-// Extended Task interface with all required properties
 interface ExtendedTask extends Task {
   completed?: boolean;
+  isCompleted?: boolean;
+  id?: string;
   assignedUser?: {
+    id?: string;
     _id?: string;
     name?: string;
     username?: string;
     avatar?: string;
   };
   assignedTo?: string;
-  status?: 'pending' | 'in-progress' | 'completed' | 'blocked';
+  status?: 'pending' | 'in-progress' | 'completed' | 'blocked' | 'done' | 'in_progress';
   boardId?: string;
   board?: string;
   dueDate?: string;
@@ -152,6 +156,113 @@ const DashboardPage: React.FC = () => {
   const [dueTodayCount, setDueTodayCount] = useState(0);
 
   const { user } = useAuthStore();
+
+  // New state variables for filtering
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [dueDateFilter, setDueDateFilter] = useState<string>('all');
+  const [completionFilter, setCompletionFilter] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [activeTaskTab, setActiveTaskTab] = useState<string>('all');
+
+  const handleTaskCompletion = async (taskId: string, completed: boolean) => {
+    try {
+      // First update the local state for immediate feedback
+      setTasks(prevTasks => 
+        prevTasks.map(task => {
+          if (task._id === taskId || task.id === taskId) {
+            // Update both flags to be consistent using the correct status values
+            return { 
+              ...task, 
+              isCompleted: !completed,
+              completed: !completed,
+              status: !completed ? 'done' : 'todo'
+            } as ExtendedTask; // Cast to ExtendedTask to satisfy TypeScript
+          }
+          return task;
+        })
+      );
+      
+      console.log(`Toggling task ${taskId} from ${completed ? 'completed' : 'incomplete'} to ${!completed ? 'completed' : 'incomplete'}`);
+      
+      // Immediately update completion count for better UX
+      if (!completed) {
+        setCompletedTaskCount(prev => prev + 1);
+      } else {
+        setCompletedTaskCount(prev => Math.max(0, prev - 1));
+      }
+      
+      // Use relative paths with apiClient
+      const endpoint = completed ? `/tasks/${taskId}/reopen` : `/tasks/${taskId}/complete`;
+      const method = completed ? 'PATCH' : 'PATCH';
+      
+      const response = await apiClient({
+        url: endpoint,
+        method: method,
+        data: {
+          completed: !completed,
+          status: !completed ? 'done' : 'todo'
+        }
+      });
+      
+      console.log('Task update response:', response.data);
+      
+      // Refresh all tasks to ensure our UI is in sync with server state
+      setTimeout(() => {
+        const loadTasks = async () => {
+          try {
+            const response = await apiClient.get('/tasks/all');
+            const responseData = response.data;
+            
+            let taskData;
+            if (responseData?.data && Array.isArray(responseData.data)) {
+              taskData = responseData.data;
+            } else if (Array.isArray(responseData)) {
+              taskData = responseData;
+            } else {
+              taskData = [];
+            }
+            
+            setTasks(taskData as ExtendedTask[]);
+            
+            // Recalculate completed count from fresh data
+            const completedCount = taskData.filter((task: { status: string; completed: boolean; isCompleted: boolean; }) =>
+              task.status === 'completed' || 
+              task.status === 'done' || 
+              task.completed === true || 
+              task.isCompleted === true
+            ).length;
+            
+            console.log('Updated completed tasks count:', completedCount);
+            setCompletedTaskCount(completedCount);
+          } catch (error) {
+            console.error('Failed to refresh tasks:', error);
+          }
+        };
+        
+        loadTasks();
+      }, 300);
+      
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      
+      // Revert optimistic update on failure
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          (task._id === taskId || task.id === taskId) ? 
+            { ...task, completed, isCompleted: completed } as ExtendedTask : 
+            task
+        )
+      );
+      
+      // Also revert the counter
+      if (!completed) {
+        setCompletedTaskCount(prev => Math.max(0, prev - 1));
+      } else {
+        setCompletedTaskCount(prev => prev + 1);
+      }
+    }
+  };
 
   const {
     combinedFeed,
@@ -287,21 +398,44 @@ const DashboardPage: React.FC = () => {
     const loadTasks = async () => {
       setLoadingTasks(true);
       try {
-        const taskData = await fetchUserTasks();
-
-        console.log('Fetched tasks:', taskData); // Debug log
+        const response = await apiClient.get('/tasks/all');
+        console.log('API Response for tasks:', response.data);
+        
+        let taskData;
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          taskData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          taskData = response.data;
+        } else {
+          taskData = [];
+        }
 
         // Make sure we have task data
         if (Array.isArray(taskData)) {
           // Cast the task data to ExtendedTask[]
           setTasks(taskData as ExtendedTask[]);
 
-          // Calculate completed tasks - handle both status='completed' and completed=true formats
-          const completed = taskData.filter(task =>
-            task.status === 'completed' || (task as ExtendedTask).completed === true
+          // Calculate completed tasks - FIXED to correctly count
+          const completedCount = taskData.filter(task =>
+            task.status === 'completed' || 
+            task.status === 'done' || 
+            task.completed === true || 
+            task.isCompleted === true
           ).length;
 
-          setCompletedTaskCount(completed);
+          console.log('Completed tasks count:', completedCount); // Log for debugging
+          console.log('Total tasks count:', taskData.length);
+          
+          // Check each task's completion status to confirm
+          taskData.forEach((task, index) => {
+            console.log(`Task ${index + 1} - ${task.title}:`, {
+              status: task.status,
+              isCompleted: task.isCompleted,
+              completed: task.completed
+            });
+          });
+
+          setCompletedTaskCount(completedCount);
           setTotalTaskCount(taskData.length);
 
           // Calculate due today
@@ -310,19 +444,32 @@ const DashboardPage: React.FC = () => {
           const tomorrow = new Date(today);
           tomorrow.setDate(tomorrow.getDate() + 1);
 
-          const dueTodayTasks = taskData.filter((task: any) => {
+          const dueTodayCount = taskData.filter(task => {
             if (!task.dueDate) return false;
             const dueDate = new Date(task.dueDate);
             dueDate.setHours(0, 0, 0, 0);
             return dueDate.getTime() === today.getTime();
-          });
+          }).length;
 
-          setDueTodayCount(dueTodayTasks.length);
-        } else {
-          // Handle if taskData is not an array
+          setDueTodayCount(dueTodayCount);
+
+          // Calculate overdue tasks
+          const overdueCount = taskData.filter(task => {
+            if (!task.dueDate) return false;
+            if (task.status === 'completed' || task.status === 'done' || 
+                task.completed === true || task.isCompleted === true) return false;
+            
+            const dueDate = new Date(task.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
+            
+            return dueDate < today;
+          }).length;
+
+          // Update other stats...
         }
       } catch (error) {
-        // Error handling
+        console.error('Error loading tasks:', error);
+        setError('Failed to load tasks');
       } finally {
         setLoadingTasks(false);
       }
@@ -471,6 +618,112 @@ const DashboardPage: React.FC = () => {
       }
     }
   };
+
+  // Filtered tasks function
+  const filteredUpcomingTasks = useMemo(() => {
+    return tasks
+      .filter((task: ExtendedTask) => {
+        // Check both completed and isCompleted fields
+        const isTaskCompleted = task.completed || task.isCompleted;
+
+        // Text search
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          const matchesTitle = task.title?.toLowerCase().includes(query);
+          const matchesDescription = task.description?.toLowerCase().includes(query);
+          
+          if (!matchesTitle && !matchesDescription) {
+            return false;
+          }
+        }
+        
+        // Tab filtering
+        if (activeTaskTab === 'today') {
+          if (!task.dueDate) return false;
+          
+          const dueDate = new Date(task.dueDate);
+          const today = new Date();
+          return dueDate.toDateString() === today.toDateString();
+        }
+        
+        if (activeTaskTab === 'upcoming') {
+          if (!task.dueDate) return false;
+          
+          const dueDate = new Date(task.dueDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const nextWeek = new Date(today);
+          nextWeek.setDate(today.getDate() + 7);
+          
+          return dueDate >= today && dueDate <= nextWeek;
+        }
+        
+        if (activeTaskTab === 'overdue') {
+          if (!task.dueDate) return false;
+          if (isTaskCompleted) return false;
+          
+          const dueDate = new Date(task.dueDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          return dueDate < today;
+        }
+        
+        if (activeTaskTab === 'completed') {
+          return isTaskCompleted;
+        }
+        
+        // Priority filtering
+        if (priorityFilter !== 'all' && task.priority !== priorityFilter) {
+          return false;
+        }
+        
+        // Due date filtering
+        if (dueDateFilter !== 'all') {
+          if (!task.dueDate) return false;
+          
+          const dueDate = new Date(task.dueDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (dueDateFilter === 'today') {
+            return dueDate.toDateString() === today.toDateString();
+          } else if (dueDateFilter === 'tomorrow') {
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            return dueDate.toDateString() === tomorrow.toDateString();
+          } else if (dueDateFilter === 'week') {
+            const endOfWeek = new Date(today);
+            endOfWeek.setDate(endOfWeek.getDate() + 7);
+            return dueDate >= today && dueDate <= endOfWeek;
+          } else if (dueDateFilter === 'month') {
+            const endOfMonth = new Date(today);
+            endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+            return dueDate >= today && dueDate <= endOfMonth;
+          } else if (dueDateFilter === 'overdue') {
+            return dueDate < today;
+          }
+        }
+        
+        // Completion status filtering
+        if (completionFilter === 'completed' && !isTaskCompleted) {
+          return false;
+        }
+        
+        if (completionFilter === 'incomplete' && isTaskCompleted) {
+          return false;
+        }
+
+        // If a task passes all filters, include it
+        return true;
+      })
+      .sort((a: ExtendedTask, b: ExtendedTask) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+  }, [tasks, searchQuery, priorityFilter, dueDateFilter, completionFilter, activeTaskTab]);
 
   return (
     <AppLayout>
@@ -865,38 +1118,193 @@ const DashboardPage: React.FC = () => {
 
             {/* Column 2: Upcoming Tasks and Activity */}
             <div>
-              {/* Upcoming Tasks */}
+              {/* Upcoming Tasks with filtering */}
               <div className="bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
                 <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
                   <h2 className="text-lg font-medium text-white flex items-center">
                     <Calendar className="h-5 w-5 mr-2 text-gray-400" />
-                    Upcoming Tasks
+                    Tasks
+                    {!loadingTasks && filteredUpcomingTasks.length > 0 && (
+                      <span className="ml-2 text-xs bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full">
+                        {filteredUpcomingTasks.length}
+                      </span>
+                    )}
                   </h2>
-                  <Link
-                    href="/tasks"
-                    className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    View all
-                  </Link>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="flex items-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"
+                    >
+                      <Filter className="h-4 w-4" />
+                    </button>
+                    <Link
+                      href="/tasks"
+                      className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      View all
+                    </Link>
+                  </div>
                 </div>
 
+                {/* Filters */}
+                <AnimatePresence>
+                  {showFilters && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 border-b border-gray-700 bg-gray-800/80">
+                        <div className="flex flex-col space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block mb-1 text-xs font-medium text-gray-400">Search</label>
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
+                                <input 
+                                  type="text"
+                                  value={searchQuery}
+                                  onChange={(e) => setSearchQuery(e.target.value)}
+                                  placeholder="Search tasks..."
+                                  className="w-full pl-8 pr-3 py-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <label className="block mb-1 text-xs font-medium text-gray-400">Priority</label>
+                              <select
+                                value={priorityFilter}
+                                onChange={(e) => setPriorityFilter(e.target.value)}
+                                className="w-full py-1.5 px-3 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
+                              >
+                                <option value="all">All Priorities</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                              </select>
+                            </div>
+                            
+                            <div>
+                              <label className="block mb-1 text-xs font-medium text-gray-400">Due Date</label>
+                              <select
+                                value={dueDateFilter}
+                                onChange={(e) => setDueDateFilter(e.target.value)}
+                                className="w-full py-1.5 px-3 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
+                              >
+                                <option value="all">All Dates</option>
+                                <option value="today">Today</option>
+                                <option value="tomorrow">Tomorrow</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="overdue">Overdue</option>
+                              </select>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <label className="block mb-1 text-xs font-medium text-gray-400">Status</label>
+                              <select
+                                value={completionFilter}
+                                onChange={(e) => setCompletionFilter(e.target.value)}
+                                className="py-1.5 px-3 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
+                              >
+                                <option value="all">All Status</option>
+                                <option value="completed">Completed</option>
+                                <option value="incomplete">Incomplete</option>
+                              </select>
+                            </div>
+                            
+                            <button
+                              onClick={() => {
+                                setSearchQuery('');
+                                setPriorityFilter('all');
+                                setDueDateFilter('all');
+                                setCompletionFilter('all');
+                                setActiveTaskTab('all');
+                              }}
+                              className="flex items-center py-1.5 px-3 bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 rounded-md"
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Reset
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Task tabs */}
+                <div className="border-b border-gray-700">
+                  <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700">
+                    <button
+                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'all' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      onClick={() => setActiveTaskTab('all')}
+                    >
+                      All
+                    </button>
+                    <button
+                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'today' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      onClick={() => setActiveTaskTab('today')}
+                    >
+                      Today
+                    </button>
+                    <button
+                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'upcoming' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      onClick={() => setActiveTaskTab('upcoming')}
+                    >
+                      Upcoming
+                    </button>
+                    <button
+                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'overdue' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      onClick={() => setActiveTaskTab('overdue')}
+                    >
+                      Overdue
+                    </button>
+                    <button
+                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'completed' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      onClick={() => setActiveTaskTab('completed')}
+                    >
+                      Completed
+                    </button>
+                  </div>
+                </div>
+
+                {/* Task list */}
                 <ul className="divide-y divide-gray-700">
                   {loadingTasks ? (
                     <li className="flex justify-center items-center py-10">
                       <LoadingSpinner size="md" />
                     </li>
-                  ) : upcomingTasks.length > 0 ? (
-                    upcomingTasks.map((task) => (
+                  ) : filteredUpcomingTasks.length > 0 ? (
+                    filteredUpcomingTasks.slice(0, 6).map((task) => (
                       <li key={task._id} className="px-6 py-4 relative">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <div className={`w-2 h-2 rounded-full ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500' :
-                              task.priority === 'medium' ? 'bg-yellow-500' :
-                                'bg-green-500'
-                              }`}></div>
+                          <div className="flex-shrink-0 mr-3">
+                            <button
+                              onClick={() => handleTaskCompletion(task._id || task.id || '', !!task.completed || !!task.isCompleted)}
+                              className={`p-1.5 rounded-md hover:bg-gray-700 ${
+                                task.completed || task.isCompleted
+                                  ? 'text-green-500' 
+                                  : 'text-gray-500 hover:text-white'
+                              }`}
+                              aria-label={task.completed || task.isCompleted ? "Mark as incomplete" : "Mark as complete"}
+                            >
+                              {task.completed || task.isCompleted
+                                ? <CheckSquare className="h-4 w-4" />
+                                : <Square className="h-4 w-4" />
+                              }
+                            </button>
                           </div>
-                          <div className="ml-3 flex-1">
-                            <h3 className="text-sm font-medium text-white">{task.title}</h3>
+                          <div className="flex-1">
+                            <h3 className={`text-sm font-medium ${task.completed || task.isCompleted ? 'text-gray-400 line-through' : 'text-white'}`}>
+                              {task.title}
+                            </h3>
                             <div className="flex items-center mt-0.5">
                               <Clock className="h-3 w-3 text-gray-500" />
                               <span className="ml-1 text-xs text-gray-500">
@@ -926,7 +1334,7 @@ const DashboardPage: React.FC = () => {
                           </div>
                         </div>
                         <Link
-                          href={`/boards/${task.boardId}`}
+                          href={task.boardId ? `/boards/${task.boardId}` : '/tasks'}
                           className="absolute inset-0 z-0"
                           aria-hidden="true"
                         />
@@ -938,19 +1346,22 @@ const DashboardPage: React.FC = () => {
                         <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
                           <Calendar className="h-6 w-6 text-gray-500" />
                         </div>
-                        <p className="text-sm text-gray-400">No upcoming tasks</p>
-                        <p className="mt-1 text-xs text-gray-500">Create a task with a due date to see it here</p>
+                        <p className="text-sm text-gray-400">No tasks match your filters</p>
+                        <p className="mt-1 text-xs text-gray-500">Try different filters or create a new task</p>
                       </div>
                     </li>
                   )}
 
-                  {/* Create task item */}
-                  {/* <li className="px-6 py-4">
-                  <div className="flex items-center justify-center py-3 border-2 border-dashed border-gray-700 rounded-lg text-sm font-medium text-gray-400 hover:border-indigo-500 hover:text-indigo-400 transition-colors cursor-pointer">
-                    <Plus className="h-5 w-5 mr-2" />
-                    Add New Task
-                  </div>
-                </li> */}
+                  {filteredUpcomingTasks.length > 6 && (
+                    <li className="px-6 py-3 bg-gray-700/50 text-center">
+                      <Link
+                        href="/tasks"
+                        className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        View {filteredUpcomingTasks.length - 6} more tasks
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </div>
 

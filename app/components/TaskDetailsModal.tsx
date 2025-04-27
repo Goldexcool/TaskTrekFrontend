@@ -12,40 +12,72 @@ import {
 } from '@/app/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import { CheckCircle, Clock, Trash2, Save, X, User, Check } from 'lucide-react';
-import { Task, Column } from '@/app/store/boardService';
+import { Task, TaskStatus, isTaskCompleted } from '@/app/types/task';
+import { Column } from '@/app/store/boardService';
 import { priorityConfig } from '@/app/utils/priorityConfig';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/app/components/ui/dropdown-menu';
 import { Button } from '@/app/components/ui/button';
+import { TeamMember } from '@/app/types/team';
+import useTaskUpdates from '@/app/hooks/useTaskUpdates';
 
-// Update the interface definition
+// Define the AssignedUser interface
+interface AssignedUser {
+  _id: string;
+  name: string;
+  avatar?: string;
+}
+
+// Import the helper functions or define them inline
+function isAssignedUser(value: any): value is AssignedUser {
+  return typeof value === 'object' && value !== null && '_id' in value && 'name' in value;
+}
+
+function getUserIdFromAssignedTo(assignedTo?: string | AssignedUser): string | undefined {
+  if (!assignedTo) return undefined;
+  if (typeof assignedTo === 'string') return assignedTo;
+  return assignedTo._id;
+}
+
 interface TaskDetailsModalProps {
-  task: Task | null;
+  task: Task;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   columns: Column[];
-  onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<any>;
-  onDeleteTask: (columnId: string, taskId: string) => void;
-  onMoveTask: (taskId: string, newColumnId: string) => void;
-  tasks: Record<string, any[]>;
-  teamMembers: any[];
-  assignedUser: any | null;
-  handleAssignTask: ((taskId: string, memberId: string | null) => void) | undefined;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<any> | void;
+  teamMembers?: TeamMember[];
+  handleAssignTask?: (taskId: string, userId: string | undefined) => Promise<void> | void;
+  onDeleteTask?: (columnId: string, taskId: string) => void;
+  onMoveTask?: (taskId: string, destColumnId: string) => void;
+  tasks?: Record<string, Task[]>;
+  assignedUser?: TeamMember;
+  children?: React.ReactNode;
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
+export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   task,
   open,
   onOpenChange,
   columns,
   onUpdateTask,
-  onDeleteTask,
-  onMoveTask,
-  tasks,
   teamMembers,
-  assignedUser,
-  handleAssignTask
+  handleAssignTask,
+  onDeleteTask
 }) => {
-  const [localTask, setLocalTask] = useState<Task | null>(task);
+  const [localTask, setLocalTask] = useState<Task>(task);
+  const { subscribeToUpdates } = useTaskUpdates();
+  const [, setUpdateCount] = useState(0);
+
+  // Subscribe to updates
+  useEffect(() => {
+    const unsubscribe = subscribeToUpdates((updatedTaskId) => {
+      if (updatedTaskId === task._id) {
+        // Force re-render when this task is updated
+        setUpdateCount(count => count + 1);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [task._id, subscribeToUpdates]);
 
   // Sync local state with prop when task changes
   useEffect(() => {
@@ -62,19 +94,53 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
       day: 'numeric',
     }).format(d);
   };
-
-  // Find which column the task is currently in
-  const findCurrentColumnId = () => {
-    let currentColumnId = '';
-    Object.entries(tasks).forEach(([colId, colTasks]) => {
-      if ((colTasks).some(t => t._id === localTask?._id)) {
-        currentColumnId = colId;
-      }
-    });
-    return currentColumnId;
+  
+  // Helper function to handle task deletion
+  const handleDeleteTask = () => {
+    if (onDeleteTask && localTask.column) {
+      onDeleteTask(localTask.column, localTask._id);
+      onOpenChange(false);
+    } else {
+      // Fall back to marking as deleted if onDeleteTask is not provided
+      onUpdateTask(localTask._id, { deleted: true } as Partial<Task>);
+      onOpenChange(false);
+    }
   };
-
-  const currentColumnId = findCurrentColumnId();
+  
+  // Helper function to get assigned user details
+  const getAssignedUserDetails = (
+    task: Task, 
+    teamMembers?: TeamMember[]
+  ): AssignedUser | null => {
+    // Handle when assignedTo is null or undefined
+    if (!task.assignedTo) {
+      return null;
+    }
+    
+    // Handle when assignedTo is an object 
+    if (typeof task.assignedTo === 'object' && task.assignedTo !== null) {
+      return task.assignedTo as AssignedUser;
+    }
+    
+    // If assignedTo is a string ID, find the matching team member
+    if (typeof task.assignedTo === 'string' && teamMembers?.length) {
+      const member = teamMembers.find(m => 
+        m._id === task.assignedTo || m.user?._id === task.assignedTo
+      );
+      
+      if (member) {
+        return {
+          _id: member._id || member.user?._id || '',
+          name: member.name || member.user?.name || 'Unknown',
+          avatar: member.avatar || member.user?.avatar
+        };
+      }
+    }
+    
+    return null;
+  };
+  
+  const assignedUserDetails = getAssignedUserDetails(localTask, teamMembers);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -180,22 +246,20 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             </label>
             
             <div className="flex items-center gap-2">
-              {assignedUser ? (
+              {assignedUserDetails ? (
                 <div className="flex items-center px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
                   <Avatar className="h-6 w-6 mr-2">
-                    <AvatarImage src={assignedUser.avatar || assignedUser.user?.avatar} />
-                    <AvatarFallback>{(assignedUser.name || assignedUser.user?.name || 'U').charAt(0)}</AvatarFallback>
+                    <AvatarImage src={assignedUserDetails.avatar} />
+                    <AvatarFallback>{assignedUserDetails.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <span>{assignedUser.name || assignedUser.user?.name}</span>
+                  <span>{assignedUserDetails.name}</span>
                   
-                  {task && (
-                    <button 
-                      onClick={() => handleAssignTask && handleAssignTask(task._id, null)}
-                      className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => handleAssignTask?.(localTask._id, undefined)}
+                    className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               ) : (
                 <DropdownMenu>
@@ -206,37 +270,36 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56">
-                    {teamMembers.map(member => {
-                      // Handle different API response formats
-                      const memberId = member.user?._id || member._id;
-                      const memberName = member.user?.name || member.name || 'Unknown User';
+                    {teamMembers?.map(member => {
+                      const memberId = member.user?._id || member._id || '';
+                      const memberName = member.user?.name || member.name || 'Unknown';
                       const memberAvatar = member.user?.avatar || member.avatar;
-                      
-                      // Only mark as selected if this member is assigned to the task
-                      const isAssigned = task?.assignedTo === memberId;
+                      const assignedUserId = typeof localTask.assignedTo === 'object' && localTask.assignedTo !== null
+                        ? (localTask.assignedTo as AssignedUser)._id 
+                        : localTask.assignedTo;
                       
                       return (
                         <DropdownMenuItem 
-                          key={memberId || Math.random().toString()}
-                          onClick={() => task && handleAssignTask && handleAssignTask(task._id, memberId)}
-                          className={isAssigned ? "bg-gray-100 dark:bg-gray-800" : ""}
+                          key={memberId}
+                          onClick={() => handleAssignTask?.(localTask._id, memberId)}
+                          className={assignedUserId === memberId ? "bg-gray-100 dark:bg-gray-800" : ""}
                         >
                           <div className="flex items-center w-full">
                             <Avatar className="h-5 w-5 mr-2">
                               {memberAvatar ? (
                                 <AvatarImage src={memberAvatar} alt={memberName} />
                               ) : (
-                                <AvatarFallback>{memberName[0]}</AvatarFallback>
+                                <AvatarFallback>{(memberName || 'U')[0]}</AvatarFallback>
                               )}
                             </Avatar>
                             <span className="flex-1">{memberName}</span>
-                            {isAssigned && <Check size={14} className="ml-auto" />}
+                            {assignedUserId === memberId && <Check size={14} className="ml-auto" />}
                           </div>
                         </DropdownMenuItem>
                       );
                     })}
                     
-                    {teamMembers.length === 0 && (
+                    {(!teamMembers || teamMembers.length === 0) && (
                       <div className="px-2 py-1 text-sm text-gray-500">
                         No team members available
                       </div>
@@ -292,11 +355,11 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <div>
               <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Move to Column</label>
               <select
-                value={currentColumnId || ''}
+                value={localTask.column || ''}
                 onChange={(e) => {
                   const newColumnId = e.target.value;
-                  if (newColumnId && currentColumnId && newColumnId !== currentColumnId) {
-                    onMoveTask(localTask._id, newColumnId);
+                  if (newColumnId && localTask.column && newColumnId !== localTask.column) {
+                    onUpdateTask(localTask._id, { column: newColumnId });
                   }
                 }}
                 className="p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
@@ -314,7 +377,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
         
         <DialogFooter className="mt-6 flex justify-end gap-2">
           <button
-            onClick={() => onDeleteTask(currentColumnId, localTask._id)}
+            onClick={handleDeleteTask}
             className="inline-flex items-center px-3 py-1.5 rounded-md text-sm text-red-600 hover:text-white hover:bg-red-600 border border-red-300 hover:border-transparent"
             aria-label="Delete task"
           >

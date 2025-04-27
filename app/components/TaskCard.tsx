@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Clock, Star, Check, CheckCircle, User, ChevronDown, ChevronRight, CircleOff } from 'lucide-react';
 import useCardColorStore, { CARD_COLORS, DEFAULT_COLOR } from '@/app/store/useCardColorStore';
 import {
@@ -12,14 +13,17 @@ import {
 } from '@/app/components/ui/dropdown-menu';
 import Draggable from 'react-draggable';
 import { Avatar, AvatarImage, AvatarFallback } from '@/app/components/ui/avatar';
-import { Task } from '@/app/types/board';
+import { Task, TaskPriority } from '@/app/types/task';
+import { TeamMember } from '@/app/types/team';
 import { priorityConfig } from '@/app/utils/priorityConfig';
+import TaskAssignment from './TaskAssignment';
+import useTaskUpdates from '@/app/hooks/useTaskUpdates';
 
 // Your store interface should have:
 interface CardColorState {
   colors: Record<string, string>;
   getCardColor: (id: string) => string;
-  setCardColor: (id: string, color: string) => void;  
+  setCardColor: (id: string, color: string) => void;
   removeCardColor: (id: string) => void;
 }
 
@@ -27,7 +31,7 @@ interface CardColorState {
 const TaskColorPicker = ({ taskId, onClose }: { taskId: string, onClose: () => void }) => {
   const { getCardColor, setCardColor } = useCardColorStore();
   const currentColor = getCardColor(taskId);
-  
+
   return (
     <div className="absolute z-50 mt-1 right-0 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 min-w-[150px]">
       <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 px-2">Card Color</h4>
@@ -35,9 +39,8 @@ const TaskColorPicker = ({ taskId, onClose }: { taskId: string, onClose: () => v
         {CARD_COLORS.map((colorOption) => (
           <button
             key={colorOption.name}
-            className={`h-6 w-6 rounded-md ${colorOption.value} border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-indigo-500 ${
-              currentColor === colorOption.value ? 'ring-2 ring-indigo-500' : ''
-            }`}
+            className={`h-6 w-6 rounded-md ${colorOption.value} border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-indigo-500 ${currentColor === colorOption.value ? 'ring-2 ring-indigo-500' : ''
+              }`}
             onClick={() => {
               setCardColor(taskId, colorOption.value);
               onClose();
@@ -48,7 +51,7 @@ const TaskColorPicker = ({ taskId, onClose }: { taskId: string, onClose: () => v
       </div>
     </div>
   );
-};
+}
 
 interface TaskCardProps {
   task: Task;
@@ -57,12 +60,14 @@ interface TaskCardProps {
   targetColumnId?: string | null;
   onClick: () => void;
   onStatusToggle: (isCompleted: boolean) => void;
-  onChangePriority?: (taskId: string, priority: 'low' | 'medium' | 'high' | 'critical') => void;
+  onChangePriority?: (taskId: string, priority: TaskPriority) => void;
   onMoveToColumn?: (taskId: string, destColumnId: string) => void;
   availableColumns?: { id: string, title: string }[];
-  assignedUser?: { avatar?: string; name?: string; user?: { avatar?: string; name?: string } };
-  teamMembers?: { _id?: string; name?: string; avatar?: string; user?: { _id?: string; name?: string; avatar?: string } }[];
-  handleAssignTask?: (taskId: string, memberId: string | null) => void;
+  assignedUser?: TeamMember;
+  teamMembers: TeamMember[];
+  // Make the function signature more flexible
+  handleAssignTask?: (taskId: string, memberId: string | undefined) => Promise<void> | void;
+  onUpdateTask?: (taskId: string, updates: Partial<Task>) => Promise<any> | void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -75,41 +80,114 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onChangePriority,
   onMoveToColumn,
   availableColumns = [],
-  assignedUser,
-  teamMembers = [],
+  assignedUser: assignedUserProp,
+  teamMembers,
   handleAssignTask,
+  onUpdateTask,
 }) => {
+  // Add this to re-render when task updates happen
+  const { subscribeToUpdates } = useTaskUpdates();
+  const [, setUpdateCount] = useState(0);
+  
+  // Subscribe to updates for this specific task
+  useEffect(() => {
+    const unsubscribe = subscribeToUpdates((updatedTaskId) => {
+      if (updatedTaskId === task._id) {
+        setUpdateCount(count => count + 1);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [task._id, subscribeToUpdates]);
+
   // Determine if task is completed (check status field only)
   const isCompleted = task.status === 'completed';
-  
+
   // Get the proper priority config
   const priority = task.priority ? priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium : priorityConfig.medium;
-  
+
   // Check if task is overdue
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
-  
+
   // Format due date properly
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
     });
   };
-  
+
   const formattedDueDate = task.dueDate ? formatDate(task.dueDate) : null;
-  
+
   // Visual feedback when dragging to a different column
   const isMovingToNewColumn = isDragging && targetColumnId && targetColumnId !== columnId;
-  
+
   const handleChangePriority = (taskId: string, priority: string) => {
     // Logic to change priority
   };
 
+  const assignedUser = useMemo(() => {
+    // First check if we already have an assignedUser prop (fastest path)
+    if (assignedUserProp) return assignedUserProp;
+    
+    // If no assignedTo, return null (early exit)
+    if (!task.assignedTo) return null;
+    
+    // If assignedTo is an object with _id, name, etc. (from API)
+    if (typeof task.assignedTo === 'object' && task.assignedTo !== null) {
+      const userObj = task.assignedTo as any;
+      
+      // Return a compatible structure with only needed properties
+      return {
+        _id: userObj._id,
+        name: userObj.name || userObj.username || 'User',
+        user: {
+          _id: userObj._id,
+          name: userObj.name || userObj.username || 'User',
+          avatar: userObj.avatar || undefined
+        },
+        avatar: userObj.avatar || undefined
+      } as TeamMember;
+    }
+    
+    // If assignedTo is a string ID, find in teamMembers with optimized search
+    if (typeof task.assignedTo === 'string') {
+      // Use a map for faster lookup if teamMembers has many items
+      return teamMembers.find(member => {
+        const memberId = member.user?._id || member._id;
+        return memberId === task.assignedTo;
+      });
+    }
+    
+    return null;
+  }, [task.assignedTo, teamMembers, assignedUserProp]);
+
+  // Add this debug logging inside your component, right after the assignedUser useMemo
+  useEffect(() => {
+    console.group(`TaskCard Debug - ${task._id}`);
+    console.log('Task title:', task.title);
+    console.log('assignedTo (raw):', task.assignedTo);
+    console.log('assignedTo type:', typeof task.assignedTo);
+    
+    // If it's an object, log its properties
+    if (typeof task.assignedTo === 'object' && task.assignedTo !== null) {
+      console.log('assignedTo object:', {
+        _id: (task.assignedTo as any)._id,
+        name: (task.assignedTo as any).name || (task.assignedTo as any).username,
+      });
+    }
+    
+    console.log('teamMembers count:', teamMembers?.length);
+    console.log('assignedUserProp:', assignedUserProp);
+    console.log('Resolved assignedUser:', assignedUser);
+    console.groupEnd();
+  }, [task.assignedTo, assignedUser, teamMembers]);
+
   return (
     <div
       className={`group bg-white dark:bg-gray-800/90 rounded-lg shadow-sm border transition-all duration-200
-        ${isCompleted ? 
-          'opacity-75 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' : 
+        ${isCompleted ?
+          'opacity-75 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' :
           `${priority.border} ${priority.glow}`}
         ${isOverdue ? 'border-red-300 dark:border-red-700 shadow-red-500/20' : ''}
         hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 dark:focus-within:ring-indigo-700
@@ -119,7 +197,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       <div className="drag-handle flex justify-center items-center h-1.5 cursor-grab active:cursor-grabbing mb-1 rounded-t-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
         <div className="w-8 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
       </div>
-      
+
       {/* Card header with priority indicator */}
       <div className="flex justify-between items-center p-3 border-b border-gray-100 dark:border-gray-700/50">
         <div className="flex items-center">
@@ -132,24 +210,22 @@ const TaskCard: React.FC<TaskCardProps> = ({
             className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600 dark:border-gray-600"
             onClick={(e) => e.stopPropagation()}
           />
-          
+
           <span
             className={`ml-2 px-1.5 py-0.5 rounded-sm text-xs flex items-center ${priority.color}`}
           >
             {priority.icon} {task.priority || 'medium'}
           </span>
         </div>
-        
-        {task.isStarred && (
-          <Star className="h-3.5 w-3.5 text-amber-400" fill="currentColor" />
-        )}
+
+
       </div>
-      
+
       {/* Card content with strikethrough for completed tasks */}
       <div className={`px-3 pt-2 pb-1 ${isCompleted ? 'opacity-75' : ''}`} onClick={onClick}>
         <h4 className={`text-sm font-medium mb-1 ${isCompleted ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
           {task.title}
-          
+
           {/* Visual indication for completed tasks */}
           {isCompleted && (
             <span className="ml-2 inline-flex items-center">
@@ -157,13 +233,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </span>
           )}
         </h4>
-        
+
         {task.description && (
           <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
             {task.description}
           </p>
         )}
-        
+
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           {/* Due date */}
           {formattedDueDate && (
@@ -183,8 +259,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <button className="text-xs text-gray-500 dark:text-gray-400">Change Priority</button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-            e.stopPropagation(); 
+          <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
             handleChangePriority(task._id, 'low');
           }}>
             <div className="flex items-center w-full">
@@ -193,8 +269,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
               {task.priority === 'low' && <Check size={14} className="ml-auto" />}
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-            e.stopPropagation(); 
+          <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
             handleChangePriority(task._id, 'medium');
           }}>
             <div className="flex items-center w-full">
@@ -203,8 +279,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
               {task.priority === 'medium' && <Check size={14} className="ml-auto" />}
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-            e.stopPropagation(); 
+          <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
             handleChangePriority(task._id, 'high');
           }}>
             <div className="flex items-center w-full">
@@ -216,105 +292,77 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between text-xs">
+        {assignedUser ? (
+          <div className="flex items-center text-gray-600 dark:text-gray-400">
+            <Avatar className="h-4 w-4 mr-1">
+              {assignedUser.avatar || assignedUser.user?.avatar ? (
+                <AvatarImage
+                  src={assignedUser.avatar || assignedUser.user?.avatar || ''}
+                  alt={assignedUser.name || assignedUser.user?.name || 'User'}
+                />
+              ) : (
+                <AvatarFallback className="text-[10px]">
+                  {((assignedUser.name || assignedUser.user?.name || 'U')[0]).toUpperCase()}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <span className="truncate max-w-[100px]">
+              {assignedUser.name || assignedUser.user?.name || 'User'}
+            </span>
+          </div>
+        ) : (
+          <span className="text-gray-400 dark:text-gray-500">Unassigned</span>
+        )}
+      </div>
+
       {/* Assigned user dropdown menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+          <button
+            className="flex items-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             {assignedUser ? (
-              <>
-                <Avatar className="h-5 w-5 mr-1">
-                  <AvatarImage src={assignedUser.avatar || assignedUser.user?.avatar} />
-                  <AvatarFallback>{(assignedUser.name || assignedUser.user?.name || 'U').charAt(0)}</AvatarFallback>
+              <div className="flex items-center text-gray-600 dark:text-gray-400">
+                <Avatar className="h-4 w-4 mr-1">
+                  {assignedUser.avatar || assignedUser.user?.avatar ? (
+                    <AvatarImage
+                      src={assignedUser.avatar || assignedUser.user?.avatar || ''}
+                      alt={assignedUser.name || assignedUser.user?.name || 'User'}
+                    />
+                  ) : (
+                    <AvatarFallback className="text-[10px]">
+                      {((assignedUser.name || assignedUser.user?.name || 'U')[0]).toUpperCase()}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
-                <span className="truncate max-w-[80px]">
-                  {assignedUser.name || assignedUser.user?.name}
+                <span className="truncate max-w-[100px]">
+                  {assignedUser.name || assignedUser.user?.name || 'User'}
                 </span>
-              </>
+              </div>
             ) : (
-              <>
-                <User className="h-4 w-4 mr-1" />
-                <span>Assign</span>
-              </>
+              <span className="text-gray-400 dark:text-gray-500">Unassigned</span>
             )}
             <ChevronDown className="h-3 w-3 ml-0.5" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          {/* Assign to submenu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
-                <User size={14} className="mr-2" /> Assign To
-                <ChevronRight size={14} className="ml-auto" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" className="w-48">
-              {/* Unassigned option */}
-              <DropdownMenuItem 
-                key="unassigned-option"
-                onClick={(e: React.MouseEvent) => { 
-                  e.stopPropagation();
-                  // Check if handleAssignTask exists and if task is assigned
-                  if (handleAssignTask && task.assignedTo) {
-                    handleAssignTask(task._id, null); 
-                  }
-                }}
-              >
-                <div className="flex items-center w-full">
-                  <CircleOff size={14} className="mr-2 text-gray-500" />
-                  <span>Unassigned</span>
-                  {!task.assignedTo && <Check size={14} className="ml-auto" />}
-                </div>
-              </DropdownMenuItem>
-              
-              {/* Divider */}
-              <div className="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
-              
-              {/* Team members */}
-              {teamMembers.length > 0 ? (
-                teamMembers.map(member => {
-                  // Handle different API response formats
-                  const memberId = member.user?._id || member._id;
-                  const memberName = member.user?.name || member.name || 'Unknown User';
-                  const memberAvatar = member.user?.avatar || member.avatar;
-                  
-                  // Only check if exactly this member is assigned
-                  const isAssigned = task.assignedTo === memberId;
-                  
-                  return (
-                    <DropdownMenuItem
-                      key={`member-${memberId || Math.random().toString()}`}
-                      onClick={(e: React.MouseEvent) => { 
-                        e.stopPropagation(); 
-                        // Only call API if selecting a different member AND handleAssignTask exists
-                        if (handleAssignTask && task.assignedTo !== memberId && memberId) {
-                          handleAssignTask(task._id, memberId); 
-                        }
-                      }}
-                    >
-                      <div className="flex items-center w-full">
-                        <Avatar className="h-5 w-5 mr-2">
-                          {memberAvatar ? (
-                            <AvatarImage src={memberAvatar} alt={memberName} />
-                          ) : (
-                            <AvatarFallback>{memberName[0]}</AvatarFallback>
-                          )}
-                        </Avatar>
-                        <span className="truncate">{memberName}</span>
-                        {isAssigned && <Check size={14} className="ml-auto" />}
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })
-              ) : (
-                <DropdownMenuItem key="no-members" disabled>
-                  <div className="flex items-center w-full">
-                    No team members found
-                  </div>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <TaskAssignment
+            task={{
+              ...task,
+              assignedTo: task.assignedTo || undefined
+            }}
+            teamMembers={teamMembers || []}
+            onUpdate={(updatedTask) => {
+              if (onUpdateTask) {
+                onUpdateTask(updatedTask._id, {
+                  assignedTo: updatedTask.assignedTo
+                });
+              }
+            }}
+            handleAssignTask={handleAssignTask}
+          />
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

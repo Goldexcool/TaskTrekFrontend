@@ -518,17 +518,7 @@ function BoardsContent() {
                   </DropdownMenuContent>
                 </DropdownMenu>
                 
-                <Button 
-                  onClick={handleCreateBoard}
-                  className={cn(
-                    "font-medium flex items-center", 
-                    glassmorphism ? 
-                      "bg-white/20 hover:bg-white/30 text-blue-600 border border-blue-200 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 dark:text-blue-400 dark:border-blue-800/50 backdrop-blur-sm" : 
-                      "bg-blue-600 hover:bg-blue-700 text-white"
-                  )}
-                >
-                  <Plus className="mr-1 h-4 w-4" /> New Board
-                </Button>
+                
               </div>
             </motion.div>
             

@@ -68,8 +68,8 @@ function BoardForm() {
         title: boardTitle.trim(),
         description: boardDescription.trim(),
         teamId: teamId || '',
-        backgroundColor: backgroundColor, // Use the hex color
-        colorScheme: colorScheme, // Use the Tailwind classes string
+        backgroundColor: backgroundColor, // The hex color value
+        colorScheme: colorScheme, // The full Tailwind classes string, don't split it
       });
       
       console.log('Board creation response:', response);

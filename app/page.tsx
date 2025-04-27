@@ -1,7 +1,6 @@
 import React from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-// import Trusted from './components/Trusted';
 import Spotlight from './components/Spotlight';
 import IntDem from './components/intDem';
 import Testimonial from './components/Testimonial';

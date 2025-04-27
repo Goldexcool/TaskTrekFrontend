@@ -9,19 +9,16 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-// Add this function to your AuthGuard component file
-// This should be placed before your AuthGuard component
+// Token verification function
 const verifyToken = async (token: string): Promise<boolean> => {
   if (!token) return false;
   
   try {
-    // You can implement more robust token validation if needed
-    // This basic check ensures it's at least a valid JWT format
+    // Basic check for JWT format
     const parts = token.split('.');
     if (parts.length !== 3) return false;
     
-    // For a more complete check, you would verify with your backend
-    // but for client-side validation, this is a reasonable start
+    // Parse the payload
     const payload = JSON.parse(atob(parts[1]));
     
     // Check if the token has expired
@@ -37,7 +34,7 @@ const verifyToken = async (token: string): Promise<boolean> => {
 };
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, refreshAccessToken, logout } = useAuthStore();
   const [isVerifying, setIsVerifying] = useState(true);
   const router = useRouter();
 
@@ -47,23 +44,57 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     try {
       const { accessToken, refreshToken } = useAuthStore.getState();
       
-      if (!accessToken) {
+      // If no access token, try to refresh if we have a refresh token
+      if (!accessToken && refreshToken) {
+        console.log('No access token, attempting to refresh...');
+        const refreshed = await refreshAccessToken();
+        
+        if (!refreshed) {
+          throw new Error('Failed to refresh token');
+        }
+        
+        // After refreshing, get the new token
+        const { accessToken: newToken } = useAuthStore.getState();
+        if (!newToken) {
+          throw new Error('Token refresh did not provide a new token');
+        }
+      } else if (!accessToken) {
+        // No access token and no refresh token
         throw new Error('No access token found');
       }
       
-      // Now verify the token using our function
-      const isValid = await verifyToken(accessToken);
+      // Get the latest token (potentially refreshed)
+      const currentToken = useAuthStore.getState().accessToken;
+      
+      // Verify the current token
+      const isValid = await verifyToken(currentToken as string);
       
       if (!isValid) {
-        throw new Error('Invalid or expired token');
+        // Token is invalid or expired, try to refresh
+        console.log('Token is invalid or expired, attempting to refresh...');
+        if (refreshToken) {
+          const refreshed = await refreshAccessToken();
+          
+          if (!refreshed) {
+            throw new Error('Failed to refresh invalid token');
+          }
+        } else {
+          throw new Error('Invalid or expired token and no refresh token');
+        }
       }
       
+      // If we made it here, we have a valid token
       setIsVerifying(false);
     } catch (error) {
       console.error('Authentication check failed:', error);
+      
+      // Clear auth state
+      logout();
+      
+      // Redirect to sign in
       router.push('/signIn');
     }
-  }, [router]);
+  }, [router, refreshAccessToken, logout]);
 
   useEffect(() => {
     checkAuth();

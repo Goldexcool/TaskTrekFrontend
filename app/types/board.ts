@@ -21,6 +21,8 @@ export interface Task {
   _id: string;
   title: string;
   description?: string;
+  completed?: boolean;
+  isCompleted?: boolean;
   column: string;
   position: number;
   priority?: TaskPriority;
@@ -78,7 +80,7 @@ const updateTask = async (taskId: string, updates: Partial<Task>) => {
   try {
     // API call with apiUpdates that has null instead of undefined
     const response = await fetch(`/tasks/${taskId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(apiUpdates)
     });

@@ -44,12 +44,16 @@ const TeamCardWithBoardCreate: React.FC<TeamCardWithBoardCreateProps> = ({ team,
     try {
       setIsCreating(true);
       
+      // Look at the color selector rendering to identify the right gradient
+      // Assuming CARD_COLORS contains the gradient classes
+      const selectedGradientClass = CARD_COLORS.find(color => color.value === selectedColumnColor)?.value || DEFAULT_COLOR;
+      
       const requestBody = {
         title: newBoardTitle.trim(),
         description: newBoardDescription.trim(),
         teamId: team._id,
-        backgroundColor: selectedBoardColor,
-        colorScheme: selectedColumnColor, 
+        backgroundColor: selectedBoardColor,      // This is a hex color
+        colorScheme: `bg-gradient-to-r ${selectedGradientClass}`, // Fix: Make sure this is a full gradient class
       };
       
       await createBoard(requestBody);

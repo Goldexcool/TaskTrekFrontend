@@ -15,6 +15,7 @@ import { Column, Task, Board } from '@/app/store/boardService';
 import { useToast } from '@/app/hooks/useToast';
 import useAuthStore from '@/app/store/useAuthStore';
 import useTaskStore, { TaskState } from '@/app/store/useTaskStore';
+import useTaskUpdates from '@/app/hooks/useTaskUpdates';
 import { shallow } from 'zustand/shallow';
 import api from '../../utils/apiClient';
 
@@ -39,9 +40,10 @@ import { Badge } from '@/app/components/ui/badge';
 import { Progress } from '@/app/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import TaskDetailsModal from '@/app/components/TaskDetailsModal';
+import TaskAssignment from '@/app/components/TaskAssignment';
 import {
-  Sheet, 
-  SheetContent, 
+  Sheet,
+  SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
@@ -86,23 +88,23 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Icons
 import {
-  Plus, 
-  MoreHorizontal, 
+  Plus,
+  MoreHorizontal,
   Clock,
-  Users, 
-  Tag, 
-  AlertCircle, 
+  Users,
+  Tag,
+  AlertCircle,
   Search,
-  Filter as FilterIcon, 
-  SortAsc, 
-  Star, 
-  Edit, 
-  Trash2, 
+  Filter as FilterIcon,
+  SortAsc,
+  Star,
+  Edit,
+  Trash2,
   ChevronDown,
-  X, 
-  ArrowLeft, 
-  Calendar, 
-  User, 
+  X,
+  ArrowLeft,
+  Calendar,
+  User,
   Flag,
   BarChart2,
   Settings,
@@ -187,11 +189,11 @@ const priorityConfig = {
 // Animation variants
 const pageTransition = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
     transition: { duration: 0.5 }
   },
-  exit: { 
+  exit: {
     opacity: 0,
     transition: { duration: 0.3 }
   }
@@ -210,8 +212,8 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  show: { 
-    y: 0, 
+  show: {
+    y: 0,
     opacity: 1,
     transition: {
       type: "spring",
@@ -254,29 +256,67 @@ interface FilterOptions {
 }
 
 // Status types
-type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'blocked';
+type TaskStatus = 'pending' | 'in-progress' | 'done' | 'blocked';
 
-// Update or extend the Task interface
-interface ExtendedTask extends Task {
-  assignedAt?: string;
+interface ExtendedTask extends Omit<Task, 'status'> {
+  assignedTo?: string;
+  assignedAt?: string; // Add this field
+  completed?: boolean;
+  isCompleted?: boolean;
+  id?: string;
+  status?: 'pending' | 'in-progress' | 'done' | 'blocked' | 'completed';
 }
+
+// Helper function to convert between status values
+function normalizeTaskStatus(status: string | undefined): TaskStatus {
+  if (!status) return 'pending';
+
+  if (status === 'completed') return 'done';
+  if (status === 'done') return 'done';
+
+  return status as TaskStatus;
+}
+
+const isTaskCompleted = (task: Task | BoardPageTask | ExtendedTask): boolean => {
+  if (!task) return false;
+
+  if (task.status === 'done') return true;
+  if (task.status === 'completed') return true;
+  if (task.completed === true) return true;
+  if (task.isCompleted === true) return true;
+
+  return false;
+};
 
 interface BoardPageTask extends Omit<Task, 'status'> {
   _id: string;
   title: string;
   description?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
-  status?: 'pending' | 'in-progress' | 'completed' | 'blocked';
-  completed?: boolean; // Add this field to handle both types of completion indicators
+  status?: 'pending' | 'in-progress' | 'done' | 'blocked';
+  completed?: boolean;
   boardId: string;
   column: string;
   position: number;
   dueDate?: string;
   assignedTo?: string;
+  assignedAt?: string; 
   labels?: string[];
 }
 
-// User avatar component for task assignment
+type UnifiedTask = BoardPageTask & Task & ExtendedTask;
+
+interface TaskAssignmentResponse {
+  success: boolean;
+  data: {
+    _id: string;
+    assignedTo?: string | undefined;
+    assignedAt?: string;
+    title: string;
+  };
+  message?: string;
+}
+
 const UserAvatarSelectionMenu: React.FC<{
   onSelectUser: (userId: string) => void;
   currentUserId?: string;
@@ -287,16 +327,15 @@ const UserAvatarSelectionMenu: React.FC<{
       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 px-2">
         Assign to:
       </h3>
-      
+
       <div className="space-y-1">
         {teamMembers.map(member => (
           <button
             key={member._id || member.user._id}
-            className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${
-              (currentUserId === member._id || currentUserId === member.user?._id) 
-                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' 
+            className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${(currentUserId === member._id || currentUserId === member.user?._id)
+                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
+              }`}
             onClick={() => onSelectUser(member._id || member.user._id)}
           >
             <Avatar className="h-6 w-6 mr-2">
@@ -314,8 +353,7 @@ const UserAvatarSelectionMenu: React.FC<{
             No team members available
           </p>
         )}
-        
-        {/* Option to remove assignment */}
+
         {currentUserId && (
           <button
             className="w-full flex items-center px-2 py-1.5 rounded-md text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 mt-2"
@@ -330,7 +368,6 @@ const UserAvatarSelectionMenu: React.FC<{
   );
 };
 
-// Task Priority Menu for changing priority
 const TaskPriorityMenu: React.FC<{
   onSelectPriority: (priority: string) => void;
   currentPriority: string;
@@ -341,25 +378,24 @@ const TaskPriorityMenu: React.FC<{
     { value: 'high', label: 'High' },
     { value: 'critical', label: 'Critical' }
   ];
-  
+
   return (
     <div className="p-2 w-48">
       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 px-2">
         Set priority:
       </h3>
-      
+
       <div className="space-y-1">
         {priorities.map(priority => {
           const config = priorityConfig[priority.value as keyof typeof priorityConfig];
-          
+
           return (
             <button
               key={priority.value}
-              className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${
-                currentPriority === priority.value
-                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' 
+              className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${currentPriority === priority.value
+                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-              }`}
+                }`}
               onClick={() => onSelectPriority(priority.value)}
             >
               <span className={`mr-2 px-1.5 py-0.5 rounded text-xs flex items-center ${config.color}`}>
@@ -373,7 +409,6 @@ const TaskPriorityMenu: React.FC<{
   );
 };
 
-// Column Selection Menu for manually moving tasks
 const ColumnSelectionMenu: React.FC<{
   columns: Column[];
   currentColumnId: string;
@@ -384,16 +419,15 @@ const ColumnSelectionMenu: React.FC<{
       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 px-2">
         Move to column:
       </h3>
-      
+
       <div className="space-y-1 max-h-64 overflow-y-auto">
         {columns.map(column => (
           <button
             key={column._id}
-            className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${
-              currentColumnId === column._id
-                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' 
+            className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${currentColumnId === column._id
+                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
+              }`}
             onClick={() => onSelectColumn(column._id)}
           >
             {column.title}
@@ -404,39 +438,24 @@ const ColumnSelectionMenu: React.FC<{
   );
 };
 
-// Enhanced drag and drop functionality with context-aware indicators
 const BoardPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const { user, accessToken } = useAuthStore();
+  const { notifyTaskUpdate } = useTaskUpdates();
   const boardId = params?.id as string;
-  
-  // State hooks for board data
+
   const [board, setBoard] = useState<Board | null>(null);
   const [columns, setColumns] = useState<Column[]>([]);
-  
-  // Create a memoized selector function that only changes when its dependencies change
-  const taskSelector = useMemo(
-    () => (state: TaskState) => ({
-      tasks: state.tasks,
-      fetchTasksByColumn: state.fetchTasksByColumn,
-      addTask: state.addTask,
-      updateTask: state.updateTask,
-      deleteTask: state.deleteTask,
-      moveTask: state.moveTask,
-    }),
-    [] // No dependencies, so this selector will be created only once
-  );
-  
-  // Use the selector without shallow
-  const tasks = useTaskStore((state) => state.tasks);
+  const [tasks, setTasks] = useState<Record<string, BoardPageTask[]>>({});
+
   const fetchTasksByColumn = useTaskStore((state) => state.fetchTasksByColumn);
   const addTaskToStore = useTaskStore((state) => state.addTask);
-  const updateTaskInStore = useTaskStore((state) => state.updateTask);
   const deleteTaskInStore = useTaskStore((state) => state.deleteTask);
   const moveTaskInStore = useTaskStore((state) => state.moveTask);
-  
+  const updateTaskInStore = useTaskStore((state) => state.updateTask);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [dataFetched, setDataFetched] = useState<boolean>(false);
@@ -445,7 +464,6 @@ const BoardPage: React.FC = () => {
   const [membersTab, setMembersTab] = useState<'active'>('active');
   const [showTeamSheet, setShowTeamSheet] = useState(false);
 
-  // UI state hooks
   const [viewMode, setViewMode] = useState<BoardViewMode>(BoardViewMode.Cards);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [sidebarTab, setSidebarTab] = useState<'info' | 'activity' | 'members'>('info');
@@ -464,17 +482,16 @@ const BoardPage: React.FC = () => {
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('system');
   const [editMode, setEditMode] = useState<boolean>(false);
 
-  // Modals state
   const [showCreateColumn, setShowCreateColumn] = useState<boolean>(false);
   const [showTaskDetails, setShowTaskDetails] = useState<boolean>(false);
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
   const [showBoardSettings, setShowBoardSettings] = useState<boolean>(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | ExtendedTask | null>(null);
 
   // DnD state
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
-  
+
   // Refs
   const boardContainerRef = useRef<HTMLDivElement>(null);
   const activityLogRef = useRef<HTMLDivElement>(null);
@@ -487,24 +504,21 @@ const BoardPage: React.FC = () => {
     recentActivity: [] as any[],
     memberActivity: {} as Record<string, number>,
   });
-  
-  // Add these variables to track owner/admin status
+
   const [isOwner, setIsOwner] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Set up sensors for drag and drop
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      // Add a distance constraint to prevent drag from triggering on slight movements
       activationConstraint: {
-        distance: 10, // Must move 10px before drag starts
+        distance: 10, 
       },
     }),
     useSensor(PointerSensor, {
-      // Customized for touch devices
       activationConstraint: {
-        distance: 10, // Must move 10px before drag starts
-        tolerance: 5, // Allow some wiggle room
+        distance: 10, 
+        tolerance: 5, 
       },
     }),
     useSensor(KeyboardSensor, {
@@ -516,43 +530,40 @@ const BoardPage: React.FC = () => {
   const collisionDetectionStrategy: CollisionDetection = useCallback((args) => {
     // First, detect any collisions with the pointer
     const pointerCollisions = pointerWithin(args);
-    
+
     if (pointerCollisions.length > 0) {
       // Return the most relevant intersection
       const closestCollisions = closestCorners(args);
       return closestCollisions.length > 0 ? [closestCollisions[0]] : [];
     }
-    
-    // If no pointer collisions, use closest center
+
     return closestCenter(args);
   }, []);
 
   // Helper function to get team ID
   const getTeamId = (board: any): string => {
     if (!board) return '';
-    
+
     if (!board.team) return '';
-    
+
     if (typeof board.team === 'string') {
       return board.team;
     }
-    
+
     if (typeof board.team === 'object') {
       return board.team?._id || board.team?.id || '';
     }
-    
+
     return '';
   };
 
-  // Add this function to check if current user is owner or admin of the team
   const checkUserPermissions = useCallback(() => {
     if (!user || !board || !board.team) return;
-    
+
     const teamId = typeof board.team === 'string' ? board.team : board.team._id;
-    
+
     if (!teamId) return;
-    
-    // Try to fetch team details to check permissions
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     fetch(`${apiUrl}/teams/${teamId}`, {
       headers: {
@@ -562,17 +573,17 @@ const BoardPage: React.FC = () => {
       .then(response => response.json())
       .then(data => {
         const teamData = data.data || data;
-        
+
         // Check if user is owner
         const ownerId = typeof teamData.owner === 'string' ? teamData.owner : teamData.owner?._id;
         setIsOwner(user._id === ownerId);
-        
+
         // Check if user is admin
         const userMember = teamData.members?.find((member: any) => {
           const memberId = typeof member.user === 'string' ? member.user : member.user?._id;
           return user._id === memberId;
         });
-        
+
         setIsAdmin(userMember?.role === 'admin' || user._id === ownerId);
       })
       .catch(error => {
@@ -582,13 +593,12 @@ const BoardPage: React.FC = () => {
 
   // Fetch board data
   const fetchBoardData = useCallback(async () => {
-    // Exit early if board ID is undefined or invalid
     if (!boardId || boardId === 'undefined') {
       setError("Invalid board ID");
       setLoading(false);
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -601,48 +611,55 @@ const BoardPage: React.FC = () => {
       // Fetch columns for the board
       try {
         const columnsData = await fetchColumnsByBoard(boardId);
-        
+
         if (Array.isArray(columnsData)) {
           // Sort columns by position
           const sortedColumns = [...columnsData].sort((a, b) => a.position - b.position);
           setColumns(sortedColumns);
-          
+
           // Create a new tasks object to populate
+          const newTasks: Record<string, BoardPageTask[]> = {};
           let totalTasks = 0;
           let completedTasks = 0;
           const tasksByPriority: Record<string, number> = {
             low: 0,
-            medium: 0, 
+            medium: 0,
             high: 0,
             critical: 0
           };
-          
+
           // For each column, fetch its tasks
           const columnPromises = sortedColumns.map(async (column) => {
             try {
               // Use the task store to fetch tasks for this column
               const columnTasks = await fetchTasksByColumn(column._id);
-              
+
+              // Store tasks in the newTasks object
+              newTasks[column._id] = columnTasks as BoardPageTask[];
+
               // Update stats
               totalTasks += columnTasks.length;
-              completedTasks += (columnTasks as any[]).filter(task => task.status !== undefined && task.status === 'completed').length;
-              
+              completedTasks += (columnTasks as any[]).filter(task => isTaskCompleted(task)).length;
+
               // Count by priority
-                (columnTasks as any[]).forEach(task => {
+              (columnTasks as any[]).forEach(task => {
                 const priority: keyof typeof tasksByPriority = (task.priority as keyof typeof tasksByPriority) || 'medium';
                 tasksByPriority[priority] = (tasksByPriority[priority] || 0) + 1;
-                });
-              
+              });
+
               return { columnId: column._id, tasks: columnTasks };
             } catch (error) {
               console.error(`Error fetching tasks for column ${column._id}:`, error);
               return { columnId: column._id, tasks: [] };
             }
           });
-          
+
           // Wait for all column tasks to be fetched
           await Promise.all(columnPromises);
-          
+
+          // Update the tasks state
+          setTasks(newTasks);
+
           // Update board stats
           setBoardStats(prev => ({
             ...prev,
@@ -657,20 +674,19 @@ const BoardPage: React.FC = () => {
         console.log('No columns found or error fetching columns:', columnError);
         setColumns([]);
       }
-      
+
       setDataFetched(true);
-      
-      // Generate mock activity data or fetch real activity
+
       const mockActivity = generateMockActivity(10);
       setBoardStats(prev => ({
         ...prev,
         recentActivity: mockActivity
       }));
-      
+
     } catch (error: any) {
       console.error('Error loading board:', error);
       setError(typeof error === 'string' ? error : 'Failed to load board data');
-      
+
       toast({
         title: "Error",
         description: typeof error === 'string' ? error : 'Failed to load board data',
@@ -681,7 +697,6 @@ const BoardPage: React.FC = () => {
     }
   }, [boardId, fetchTasksByColumn, toast]);
 
-  // Generate mock activity data
   const generateMockActivity = (count: number) => {
     const activities = [];
     const activityTypes = [
@@ -695,13 +710,13 @@ const BoardPage: React.FC = () => {
       'assigned a task',
       'created a column'
     ];
-    
+
     const names = ['Alex Johnson', 'Taylor Smith', 'Jordan Lee', 'Casey Wilson', 'Morgan Zhang'];
-    
+
     for (let i = 0; i < count; i++) {
       const date = new Date();
       date.setMinutes(date.getMinutes() - i * Math.floor(Math.random() * 300));
-      
+
       activities.push({
         id: `activity-${i}`,
         userName: names[Math.floor(Math.random() * names.length)],
@@ -710,31 +725,30 @@ const BoardPage: React.FC = () => {
         timestamp: date.toISOString(),
       });
     }
-    
+
     return activities;
   };
 
-  // Fetch team members
   const fetchTeamMembers = async () => {
     try {
       if (!board) return;
-      
+
       const teamId = getTeamId(board);
       if (!teamId) return;
-      
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${apiUrl}/teams/${teamId}/members`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch team members: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setTeamMembers(data.data);
       } else if (Array.isArray(data)) {
@@ -753,7 +767,6 @@ const BoardPage: React.FC = () => {
     if (!title.trim()) return;
 
     try {
-      // Calculate position (add to the end)
       const position = columns.length + 1;
 
       const newColumn = await createColumn({
@@ -762,7 +775,6 @@ const BoardPage: React.FC = () => {
         position
       });
 
-      // Add new column to the columns list
       setColumns([...columns, newColumn]);
 
       toast({
@@ -771,10 +783,8 @@ const BoardPage: React.FC = () => {
         variant: "success"
       });
 
-      // Close modal
       setShowCreateColumn(false);
-      
-      // Update activity
+
       const newActivity = {
         id: `activity-${Date.now()}`,
         userName: user?.name || 'You',
@@ -782,12 +792,12 @@ const BoardPage: React.FC = () => {
         taskName: title,
         timestamp: new Date().toISOString(),
       };
-      
+
       setBoardStats(prev => ({
         ...prev,
         recentActivity: [newActivity, ...prev.recentActivity]
       }));
-      
+
     } catch (error: any) {
       console.error('Error creating column:', error);
 
@@ -799,88 +809,158 @@ const BoardPage: React.FC = () => {
     }
   };
 
-  // Updated handleAddTask function to correctly adapt types
-  const handleAddTask = async (columnId: string, title: string, priority: string = 'medium', description: string = '', dueDate?: string) => {
+  // Complete the handleAddTask function properly
+  const handleAddTask = async (columnId: string, title: string, priority: string = 'medium', description: string = '', dueDate?: string, assignee?: string) => {
     if (!title.trim()) return;
-
+    
+    // Validate date format before proceeding - prevent API errors
+    let validatedDueDate = dueDate;
+    if (dueDate) {
+      try {
+        // Check if it's a valid date by trying to create a Date object
+        const testDate = new Date(dueDate);
+        if (isNaN(testDate.getTime())) {
+          // If invalid, show error and return early
+          toast({
+            title: "Invalid Date Format",
+            description: "Please enter a valid date format (YYYY-MM-DD)",
+            variant: "destructive"
+          });
+          return;
+        }
+        // Ensure the date is in ISO format for the API
+        validatedDueDate = testDate.toISOString();
+      } catch (error) {
+        toast({
+          title: "Invalid Date Format",
+          description: "Please enter a valid date format (YYYY-MM-DD)",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    // Create a temporary task ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
+    
+    // Create the task object for optimistic update
+    const columnTasks = tasks[columnId] || [];
+    const position = columnTasks.length + 1;
+    
+    const newTask = {
+      _id: tempId,
+      title,
+      description,
+      priority,
+      dueDate: validatedDueDate,
+      assignedTo: assignee || undefined,
+      column: columnId,
+      boardId: boardId,
+      position,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    
+    // Optimistically add the task to the UI
+    const updatedTasks = { 
+      ...tasks,
+      [columnId]: [...(tasks[columnId] || []), newTask as any]
+    };
+    
+    setTasks(updatedTasks);
+    
+    // Update board stats immediately
+    setBoardStats(prev => ({
+      ...prev,
+      totalTasks: prev.totalTasks + 1,
+      tasksByPriority: {
+        ...prev.tasksByPriority,
+        [priority]: (prev.tasksByPriority[priority as keyof typeof prev.tasksByPriority] || 0) + 1
+      },
+      recentActivity: [
+        {
+          id: `activity-${Date.now()}`,
+          userName: user?.name || 'You',
+          action: 'created a task',
+          taskName: title,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev.recentActivity
+      ]
+    }));
+    
     try {
-      const columnTasks = tasks[columnId] || [];
-      const position = columnTasks.length + 1;
-
-      // Create task using the board service
-      const newTask = await createTask({
+      // Prepare task data for API
+      const taskData: any = {
         title,
-        columnId,
+        columnId, 
         position,
         description,
-        priority: priority as 'low' | 'medium' | 'high' | 'critical',
-        dueDate
-      });
-
-      // Create a properly typed task object with all required fields
-      const adaptedTask: BoardPageTask = {
-        ...newTask,
-        _id: newTask._id,
-        boardId: boardId, // Add boardId from params
-        column: columnId, // Ensure column is set
-        position: position,
-        // Set proper status if not coming from API
-        status: newTask.status || 'pending'
+        priority: priority as 'low' | 'medium' | 'high' | 'critical'
       };
 
-      // Add the adapted task to the store
-      addTaskToStore(adaptedTask as any); // Use type assertion since we know our object is compatible
-      
-      // Update stats
-      setBoardStats(prev => ({
-        ...prev,
-        totalTasks: prev.totalTasks + 1,
-        tasksByPriority: {
-          ...prev.tasksByPriority,
-          [priority]: (prev.tasksByPriority[priority] || 0) + 1
-        },
-        recentActivity: [
-          {
-            id: `activity-${Date.now()}`,
-            userName: user?.name || 'You',
-            action: 'created a task',
-            taskName: title,
-            timestamp: new Date().toISOString(),
-          },
-          ...prev.recentActivity
-        ]
-      }));
+      // Only include dueDate if it's a valid date
+      if (validatedDueDate) {
+        taskData.dueDate = validatedDueDate;
+      }
 
+      if (assignee) {
+        taskData.assignedTo = assignee;
+      }
+      
+      // Make the actual API call
+      const actualTask = await createTask(taskData);
+      
+      // Replace the temporary task with the actual one
+      const finalTasks = { ...tasks };
+      finalTasks[columnId] = (finalTasks[columnId] || []).map(task => 
+        task._id === tempId ? { ...actualTask, column: columnId } as any : task
+      );
+      
+      setTasks(finalTasks);
+      
       toast({
         title: "Success",
         description: "Task created successfully",
         variant: "success"
       });
-
-      // Clear active column
-      setActiveColumn(null);
       
+      return actualTask;
     } catch (error: any) {
+      // On error, remove the temporary task
+      const revertedTasks = { ...tasks };
+      revertedTasks[columnId] = (revertedTasks[columnId] || []).filter(task => task._id !== tempId);
+      
+      setTasks(revertedTasks);
+      
+      // Also revert the board stats
+      setBoardStats(prev => ({
+        ...prev,
+        totalTasks: prev.totalTasks - 1,
+        tasksByPriority: {
+          ...prev.tasksByPriority,
+          [priority]: Math.max(0, (prev.tasksByPriority[priority as keyof typeof prev.tasksByPriority] || 0) - 1)
+        },
+        recentActivity: prev.recentActivity.slice(1) // Remove the first (most recent) activity
+      }));
+      
       console.error('Error creating task:', error);
       toast({
         title: "Error",
-        description: typeof error === 'string' ? error : 'Failed to create task',
+        description: error.message || 'Failed to create task',
         variant: "destructive"
       });
     }
   };
 
-  // Fix handleToggleTaskCompletion to properly check current status before making API calls
   const handleToggleTaskCompletion = async (columnId: string, taskId: string, isCompleted: boolean) => {
     try {
-      // Find the task that's being updated
       const columnTasks = tasks[columnId] || [];
       const taskToUpdate = (columnTasks as any[]).find(task => task._id === taskId);
-      
+
       if (!taskToUpdate) return;
-      
-      // Check if task is already in the desired state to avoid unnecessary API calls
-      if ((taskToUpdate.status === 'completed' || taskToUpdate.completed === true) && isCompleted) {
+
+      if (isTaskCompleted(taskToUpdate) && isCompleted) {
         toast({
           title: "Info",
           description: "This task is already completed",
@@ -888,8 +968,8 @@ const BoardPage: React.FC = () => {
         });
         return;
       }
-  
-      if ((taskToUpdate.status !== 'completed' && !taskToUpdate.completed) && !isCompleted) {
+
+      if (!isTaskCompleted(taskToUpdate) && !isCompleted) {
         toast({
           title: "Info",
           description: "This task is already open",
@@ -897,27 +977,26 @@ const BoardPage: React.FC = () => {
         });
         return;
       }
-      
-      // Show immediate feedback
+
       toast({
         title: isCompleted ? "Marking task complete..." : "Reopening task...",
         variant: "loading",
       });
-      
-      const newStatus: TaskStatus = isCompleted ? 'completed' : 'pending';
-      
+
+      const newStatus: TaskStatus = isCompleted ? 'done' : 'pending';
+
       // Update the task in the store first (optimistic update)
-      updateTaskInStore(taskId, { 
+      updateTaskInStore(taskId, {
         status: newStatus,
         completed: isCompleted,
         completedAt: isCompleted ? new Date().toISOString() : undefined
       } as any);
-      
+
       // Update board stats for completion status
       setBoardStats(prev => ({
         ...prev,
-        completedTasks: isCompleted 
-          ? prev.completedTasks + 1 
+        completedTasks: isCompleted
+          ? prev.completedTasks + 1
           : Math.max(0, prev.completedTasks - 1),
         recentActivity: [
           {
@@ -930,54 +1009,44 @@ const BoardPage: React.FC = () => {
           ...prev.recentActivity
         ]
       }));
-      
-      // Use the proper API endpoint based on the desired state
-      const endpoint = isCompleted ? 'complete' : 'reopen';
+
+      // Use the dedicated API endpoints as shown in the new API examples
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      
-      const response = await fetch(`${apiUrl}/tasks/${taskId}/${endpoint}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          boardId: boardId,
-          columnId: columnId
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        
-        // If the first API call fails, try using the PUT endpoint to update the task directly
-        console.log("Using fallback task update method");
-        
-        const updateResponse = await fetch(`${apiUrl}/tasks/${taskId}`, {
-          method: 'PUT',
+
+      if (isCompleted) {
+        // Use completeTask function
+        const response = await fetch(`${apiUrl}/tasks/${taskId}/complete`, {
+          method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status: newStatus,
-            completed: isCompleted,
-            boardId: boardId,
-            columnId: columnId
-          })
+          }
         });
-        
-        if (!updateResponse.ok) {
-          throw new Error(`Failed to ${isCompleted ? 'complete' : 'reopen'} task`);
+
+        if (!response.ok) {
+          throw new Error('Failed to complete task');
+        }
+      } else {
+        // Use reopenTask function
+        const response = await fetch(`${apiUrl}/tasks/${taskId}/reopen`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to reopen task');
         }
       }
-      
+
       // Show success message
       toast({
         title: isCompleted ? "Task completed" : "Task reopened",
         variant: isCompleted ? "success" : "default"
       });
-      
+
     } catch (error: any) {
       console.error('Error updating task completion:', error);
       toast({
@@ -985,64 +1054,51 @@ const BoardPage: React.FC = () => {
         description: error.message || `Failed to ${isCompleted ? 'complete' : 'reopen'} task`,
         variant: "destructive"
       });
-      
-      // Revert the optimistic update
-      updateTaskInStore(taskId, { 
-        status: !isCompleted ? 'completed' : 'pending',
+
+      updateTaskInStore(taskId, {
+        status: !isCompleted ? 'done' : 'pending',
         completed: !isCompleted
       } as any);
-      
+
       // On error, refresh the column data to ensure UI consistency
       fetchTasksByColumn(columnId);
     }
   };
 
-  // Fix the handleDeleteTask function API endpoint
   const handleDeleteTask = async (columnId: string, taskId: string) => {
     if (!confirm('Are you sure you want to delete this task?')) {
       return;
     }
-    
+
     try {
-      // If the task details modal is open, close it
       if (selectedTask && selectedTask._id === taskId) {
         setSelectedTask(null);
         setShowTaskDetails(false);
       }
-      
-      // Find the task to keep a reference for activity log
+
       const columnTasks = tasks[columnId] || [];
       const taskToDelete = (columnTasks as any[]).find(task => task._id === taskId);
-      
-      // Delete the task via the API first to ensure it succeeds
-      // Fix API URL
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${apiUrl}/tasks/${taskId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
+
+      toast({
+        title: "Deleting task...",
+        variant: "loading",
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete task');
-      }
-      
-      // Then update the local state
-      deleteTaskInStore(columnId, taskId);
-      
+
+      // Delete task using the store function
+      await deleteTaskInStore(taskId);
+
       toast({
         title: "Success",
         description: "Task deleted successfully",
         variant: "success"
       });
-      
+
       // Add to activity log
       if (taskToDelete) {
         setBoardStats(prev => ({
           ...prev,
           totalTasks: prev.totalTasks - 1,
-          completedTasks: taskToDelete.status === 'completed' ? prev.completedTasks - 1 : prev.completedTasks,
+          completedTasks: isTaskCompleted(taskToDelete) ? prev.completedTasks - 1 : prev.completedTasks,
           recentActivity: [
             {
               id: `activity-${Date.now()}`,
@@ -1055,111 +1111,138 @@ const BoardPage: React.FC = () => {
           ]
         }));
       }
-      
+
     } catch (error: any) {
       console.error('Error deleting task:', error);
-      
+
       toast({
         title: "Error",
-        description: typeof error === 'string' ? error : 'Failed to delete task',
+        description: typeof error === 'string' ? error : error.message || 'Failed to delete task',
         variant: "destructive"
       });
     }
   };
 
-  // Function to handle task assignment using the specific API endpoint
-  const handleAssignTask = async (taskId: string, userId: string | null) => {
-    try {
-      // Find the current assignment state
-      let currentlyAssigned = null;
-      Object.values(tasks).forEach((columnTasks: any[]) => {
-        const task = columnTasks.find(t => t._id === taskId);
-        if (task) {
-          currentlyAssigned = task.assignedTo;
-        }
-      });
-      
-      // If task is already in the desired state, don't make the API call
-      if (currentlyAssigned === userId) {
-        return; // Already in the requested state
+  // Update handleAssignTask to use optimistic updates
+  const handleAssignTask = async (taskId: string, userId: string | undefined): Promise<void> => {
+    let oldAssignedTo: any = null;
+    let taskColumnId: string | null = null;
+    
+    // First capture the old state before modifying anything
+    Object.entries(tasks).forEach(([colId, colTasks]) => {
+      const task = (colTasks as any[]).find(t => t._id === taskId);
+      if (task) {
+        taskColumnId = colId;
+        oldAssignedTo = task.assignedTo;
       }
+    });
+    
+    // Optimistically update UI first for instant feedback
+    if (taskColumnId) {
+      // Deep clone to ensure React detects the change
+      const updatedTasks = JSON.parse(JSON.stringify(tasks));
+      const taskIndex = (updatedTasks[taskColumnId] as any[]).findIndex(t => t._id === taskId);
       
-      // Show loading toast
-      toast({
-        title: userId ? "Assigning task..." : "Removing assignment...",
-        variant: "loading"
-      });
-      
-      let response;
-      
-      if (userId) {
-        // Use axios for the assign endpoint
-        response = await api.patch(`/tasks/${taskId}/assign`, { userId });
-      } else {
-        // Use axios for the unassign endpoint
-        response = await api.patch(`/tasks/${taskId}/unassign`);
-      }
-      
-      // Update local state (no need to check response.ok with axios)
-      const data = response.data;
-      
-      // Find which column this task belongs to
-      let sourceColumnId = null;
-      Object.entries(tasks).forEach(([colId, colTasks]) => {
-        if ((colTasks as any[]).some(t => t._id === taskId)) {
-          sourceColumnId = colId;
-        }
-      });
-      
-      if (sourceColumnId) {
-        // Update task in store
-        updateTaskInStore(taskId, { 
-          assignedTo: userId || undefined,
-          assignedAt: userId ? new Date().toISOString() : undefined
-        } as any);
+      if (taskIndex >= 0) {
+        (updatedTasks[taskColumnId] as any[])[taskIndex] = {
+          ...(updatedTasks[taskColumnId] as any[])[taskIndex],
+          assignedTo: userId || undefined
+        };
         
-        // If task details modal is open, update the selected task
+        // Update state immediately for responsive UI
+        setTasks(updatedTasks);
+        
+        // If task is selected, update that too
         if (selectedTask && selectedTask._id === taskId) {
           setSelectedTask({
             ...selectedTask,
-            assignedTo: userId || undefined,
-            assignedAt: userId ? new Date().toISOString() : undefined
-          } as ExtendedTask);  // Use type assertion to fix TypeScript error
+            assignedTo: userId || undefined
+          });
+        }
+        
+        // Notify all task subscribers
+        notifyTaskUpdate(taskId);
+      }
+    }
+    
+    // Now make the actual API call
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      if (userId) {
+        // Assign the task
+        const response = await fetch(`${apiUrl}/tasks/${taskId}/assign`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ userId })
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to assign task");
+        }
+      } else {
+        // Unassign the task
+        const response = await fetch(`${apiUrl}/tasks/${taskId}/unassign`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to unassign task");
         }
       }
       
-      // Show success message
+      // Show success message only after actual API success
       toast({
         title: "Success",
         description: userId ? "Task assigned successfully" : "Task unassigned successfully",
         variant: "success"
       });
+    } catch (error) {
+      // On error, revert the optimistic update
+      console.error("Error assigning task:", error);
       
-    } catch (error: any) {
-      console.error('Error managing task assignment:', error);
-      
-      // Better error handling with axios
-      const errorMessage = error.response?.data?.message || error.message || "Failed to update task assignment";
-      
-      // Check if it's "already" error, which we can ignore
-      if (errorMessage.includes('already')) {
-        console.log('Task is already in the requested assignment state');
-        return;
+      if (taskColumnId) {
+        const revertedTasks = JSON.parse(JSON.stringify(tasks));
+        const taskIndex = (revertedTasks[taskColumnId] as any[]).findIndex(t => t._id === taskId);
+        
+        if (taskIndex >= 0) {
+          (revertedTasks[taskColumnId] as any[])[taskIndex] = {
+            ...(revertedTasks[taskColumnId] as any[])[taskIndex],
+            assignedTo: oldAssignedTo
+          };
+          
+          setTasks(revertedTasks);
+          
+          // Revert selected task too if needed
+          if (selectedTask && selectedTask._id === taskId) {
+            setSelectedTask({
+              ...selectedTask,
+              assignedTo: oldAssignedTo
+            });
+          }
+        }
+        
+        notifyTaskUpdate(taskId);
       }
       
       toast({
         title: "Error",
-        description: errorMessage,
+        description: `Failed to ${userId ? 'assign' : 'unassign'} task`,
         variant: "destructive"
       });
     }
   };
 
   const handleChangePriority = async (taskId: string, priority: 'low' | 'medium' | 'high' | 'critical') => {
-    // Declare variables outside try block to make them available in catch
     let localSourceColumnId: string | undefined;
     let taskToUpdate: any = null;
-    
+
     try {
       Object.entries(tasks).forEach(([colId, colTasks]) => {
         const typedTasks = colTasks as any[];
@@ -1169,45 +1252,43 @@ const BoardPage: React.FC = () => {
           taskToUpdate = task;
         }
       });
-      
+
       if (!localSourceColumnId || !taskToUpdate) {
         throw new Error("Task not found");
       }
-      
+
       // Show immediate feedback
       toast({
         title: "Updating priority...",
         variant: "loading",
       });
-      
-      // Update in the store first (optimistic update)
+
       updateTaskInStore(taskId, { priority } as any);
-      
+
       if (selectedTask && selectedTask._id === taskId) {
         setSelectedTask({
           ...selectedTask,
           priority,
         });
       }
-      
-      // Fix API URL
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tasks/${taskId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ priority })
       });
-      
+
       if (!response.ok) throw new Error('Failed to update task priority');
-      
+
       toast({
         title: "Success",
         description: `Task priority updated to ${priority}`,
         variant: "success"
       });
-      
+
       // Add to activity log
       setBoardStats(prev => ({
         ...prev,
@@ -1234,7 +1315,7 @@ const BoardPage: React.FC = () => {
         description: typeof error === 'string' ? error : 'Failed to update task priority',
         variant: "destructive"
       });
-      
+
       if (localSourceColumnId) {
         fetchTasksByColumn(localSourceColumnId);
       }
@@ -1244,7 +1325,7 @@ const BoardPage: React.FC = () => {
   const handleMoveTaskToColumn = async (taskId: string, destinationColumnId: string) => {
     let sourceColumnId: string | undefined;
     let taskToMove: any = null;
-    
+
     Object.entries(tasks).forEach(([colId, colTasks]) => {
       const typedTasks = colTasks as any[];
       const task = typedTasks.find(t => t._id === taskId);
@@ -1253,7 +1334,7 @@ const BoardPage: React.FC = () => {
         taskToMove = task;
       }
     });
-    
+
     if (!sourceColumnId || !taskToMove) {
       toast({
         title: "Error",
@@ -1262,28 +1343,27 @@ const BoardPage: React.FC = () => {
       });
       return;
     }
-    
+
     try {
       const destTasks = tasks[destinationColumnId] || [];
-      const position = destTasks.length > 0 
-        ? Math.max(...(destTasks as any[]).map(t => t.position || 0)) + 1 
+      const position = destTasks.length > 0
+        ? Math.max(...(destTasks as any[]).map(t => t.position || 0)) + 1
         : 1;
-      
+
       // Show loading toast
       toast({
         title: "Moving task...",
         variant: "loading"
       });
-      
+
       await moveTaskInStore(taskId, sourceColumnId, destinationColumnId, position);
-      
+
       toast({
         title: "Success",
         description: "Task moved successfully",
         variant: "success"
       });
-      
-      // Add to activity log
+
       setBoardStats(prev => ({
         ...prev,
         recentActivity: [
@@ -1297,7 +1377,7 @@ const BoardPage: React.FC = () => {
           ...prev.recentActivity
         ]
       }));
-      
+
     } catch (error) {
       console.error('Error moving task:', error);
       toast({
@@ -1307,7 +1387,7 @@ const BoardPage: React.FC = () => {
       });
     }
   };
-  
+
   const calculateNewPosition = (tasksInColumn: Task[], overTaskPosition: number): number => {
     const positions = tasksInColumn.map(task => task.position || 0);
     const before = positions.filter(pos => pos < overTaskPosition);
@@ -1328,31 +1408,29 @@ const BoardPage: React.FC = () => {
 
     const activeId = String(active.id);
     const overId = String(over.id);
-    
+
     if (activeId === overId) return;
 
     const activeData = active.data.current as any;
     const overData = over.data.current as any;
-    
+
     if (!activeData || activeData.type !== 'task') return;
-    
+
     const { task, columnId: sourceColumnId } = activeData;
     const taskId = task._id;
-    
+
     try {
       // Handle drop onto a column
       if (overData && overData.type === 'column') {
         const destinationColumnId = overData.id;
-        
-        // Calculate position at the end of the column
+
         const destTasks = tasks[destinationColumnId] || [];
-        const position = destTasks.length > 0 
-          ? Math.max(...(destTasks as any[]).map(t => t.position || 0)) + 1 
+        const position = destTasks.length > 0
+          ? Math.max(...(destTasks as any[]).map(t => t.position || 0)) + 1
           : 1;
-        
-        // Call moveTask directly
+
         await moveTaskInStore(taskId, sourceColumnId, destinationColumnId, position);
-        
+
         // Show feedback
         toast({
           title: "Success",
@@ -1364,14 +1442,14 @@ const BoardPage: React.FC = () => {
       else if (overData && overData.type === 'task') {
         const { task: overTask, columnId: destinationColumnId } = overData;
         const overPosition = overTask.position || 0;
-        
+
         // Calculate position based on surrounding tasks
         const destTasks = tasks[destinationColumnId] || [];
         const position = calculateNewPosition(destTasks as any[], overPosition);
-        
+
         // Call moveTask
         await moveTaskInStore(taskId, sourceColumnId, destinationColumnId, position);
-        
+
         toast({
           title: "Success",
           description: "Task moved successfully",
@@ -1392,18 +1470,242 @@ const BoardPage: React.FC = () => {
     const { active } = event;
     setIsDragging(true);
     setActiveTaskId(active.id as string);
-    
-    // Get the source column id from the data attributes
+
     const activeData = active.data.current;
     if (activeData && activeData.type === 'task') {
-      // Keep track of which column this task is coming from
       setActiveColumn(activeData.columnId);
     }
   };
 
-  // Effect to fetch data when component mounts
+  const handleDeleteColumn = async (columnId: string) => {
+    if (!confirm("Are you sure you want to delete this column? All tasks in this column will also be deleted.")) {
+      return;
+    }
+
+    try {
+      toast({
+        title: "Deleting column...",
+        variant: "loading",
+      });
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${apiUrl}/columns/${columnId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete column');
+      }
+
+      setColumns(columns.filter(col => col._id !== columnId));
+
+      setBoardStats(prev => ({
+        ...prev,
+        recentActivity: [
+          {
+            id: `activity-${Date.now()}`,
+            userName: user?.name || 'You',
+            action: 'deleted a column',
+            taskName: columns.find(col => col._id === columnId)?.title || 'Unknown column',
+            timestamp: new Date().toISOString(),
+          },
+          ...prev.recentActivity
+        ]
+      }));
+
+      toast({
+        title: "Success",
+        description: "Column deleted successfully",
+        variant: "success"
+      });
+    } catch (error: any) {
+      console.error('Error deleting column:', error);
+      toast({
+        title: "Error",
+        description: typeof error === 'string' ? error : 'Failed to delete column',
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Update the updateTask function to use optimistic updates
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    // Create a backup of the original task before any changes
+    let originalTask: Task | null = null;
+    let taskColumnId: string | null = null;
+    
+    // Find the task and its column
+    Object.entries(tasks).forEach(([colId, colTasks]) => {
+      const task = (colTasks as any[]).find(t => t._id === taskId);
+      if (task) {
+        originalTask = { ...task };
+        taskColumnId = colId;
+      }
+    });
+    
+    if (!originalTask || !taskColumnId) {
+      toast({
+        title: "Error",
+        description: "Task not found",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Prepare the updates for API
+    const apiUpdates = { ...updates };
+    
+    // Special handling for null/undefined fields
+    if ('dueDate' in updates && updates.dueDate === undefined) {
+      (apiUpdates as any).dueDate = null;
+    }
+    
+    // Handle status conversions
+    if (updates.status === 'completed') {
+      apiUpdates.status = 'completed';
+    }
+    
+    // Make optimistic UI updates first
+    const updatedTasks = { ...tasks };
+    const taskIndex = (updatedTasks[taskColumnId] as any[]).findIndex(t => t._id === taskId);
+    
+    if (taskIndex >= 0) {
+      (updatedTasks[taskColumnId] as any[])[taskIndex] = {
+        ...(updatedTasks[taskColumnId] as any[])[taskIndex],
+        ...updates
+      };
+      
+      // Apply update immediately for responsive UI
+      setTasks(updatedTasks);
+      
+      // Update selected task if it's the one being modified
+      if (selectedTask && selectedTask._id === taskId) {
+        const safeUpdates: Partial<ExtendedTask> = {};
+        
+        // Safe copy all properties except assignedTo
+        Object.entries(updates).forEach(([key, value]) => {
+          if (key !== 'assignedTo') {
+            safeUpdates[key as keyof ExtendedTask] = value as any;
+          }
+        });
+        
+        // Handle assignedTo separately with proper type conversion
+        if ('assignedTo' in updates) {
+          const assignedToValue = updates.assignedTo;
+          
+          // Convert to string or undefined as expected by ExtendedTask
+          if (assignedToValue === null || assignedToValue === undefined) {
+            safeUpdates.assignedTo = undefined;
+          } else if (typeof assignedToValue === 'string') {
+            safeUpdates.assignedTo = assignedToValue;
+          } else if (typeof assignedToValue === 'object' && assignedToValue._id) {
+            // If it's an object with _id, extract the _id as string
+            safeUpdates.assignedTo = assignedToValue._id;
+          }
+        }
+        
+        // Now update with properly converted data
+        setSelectedTask((prevTask) => {
+          if (!prevTask) return null;
+          return {
+            ...prevTask,
+            ...safeUpdates
+          } as Task | ExtendedTask;
+        });
+      }
+      
+      // Notify all subscribers about the update
+      notifyTaskUpdate(taskId);
+    }
+    
+    // Now make the actual API call
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${apiUrl}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(apiUpdates)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update task: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Show success toast only after actual API success
+      toast({
+        title: "Success",
+        description: "Task updated successfully",
+        variant: "success"
+      });
+      
+      return data;
+    } catch (error: any) {
+      console.error('Error updating task:', error);
+      
+      // Revert optimistic updates on error
+      if (taskColumnId && originalTask) {
+        const revertedTasks = { ...tasks };
+        const taskIndex = (revertedTasks[taskColumnId] as any[]).findIndex(t => t._id === taskId);
+        
+        if (taskIndex >= 0) {
+          (revertedTasks[taskColumnId] as any[])[taskIndex] = originalTask;
+          setTasks(revertedTasks);
+        }
+        
+        // Revert selected task if needed
+        if (selectedTask && selectedTask._id === taskId) {
+          setSelectedTask(originalTask);
+        }
+        
+        // Notify subscribers about the reversion
+        notifyTaskUpdate(taskId);
+      }
+      
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to update task',
+        variant: "destructive"
+      });
+      
+      throw error;
+    }
+  };
+
+  const refreshTaskData = async (taskId: string) => {
+    try {
+      let columnId = null;
+      Object.entries(tasks).forEach(([colId, colTasks]) => {
+        const typedTasks = colTasks as BoardPageTask[];
+        if (typedTasks.some(t => t._id === taskId)) {
+          columnId = colId;
+        }
+      });
+
+      if (columnId) {
+        await fetchTasksByColumn(columnId);
+      } else {
+        const columnPromises = columns.map(async (column) => {
+          await fetchTasksByColumn(column._id);
+        });
+        await Promise.all(columnPromises);
+      }
+    } catch (error) {
+      console.error('Error refreshing task data:', error);
+    }
+  };
+
   useEffect(() => {
-  
+
     if (boardId && !dataFetched && accessToken) {
       console.log(`Fetching board data for ID: ${boardId}`);
       fetchBoardData();
@@ -1416,7 +1718,6 @@ const BoardPage: React.FC = () => {
     }
   }, [board]);
 
-  // Call this function after board loads
   useEffect(() => {
     if (board && user) {
       checkUserPermissions();
@@ -1425,88 +1726,120 @@ const BoardPage: React.FC = () => {
 
   // Apply filters and search to tasks
   const getFilteredTasks = (columnId: string): Task[] => {
+    // Make sure we're returning tasks with the right type
     const columnTasks = tasks[columnId] || [];
-    const typedTasks = columnTasks as Task[];
-    
-    // Return filtered tasks with proper typing
-    return typedTasks.filter((task) => {
-      // Filter by completion status
-      if (!showCompletedTasks && task.status === 'completed') {
-        return false;
-      }
-      
-      // Filter by search query
-      if (searchQuery && !(
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (task.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-      )) {
-        return false;
-      }
-      
-      // Filter by priority if any are selected
-      if (filterOptions.priority.length > 0 && !filterOptions.priority.includes(task.priority || 'medium')) {
-        return false;
-      }
-      
-      // Filter by labels if any are selected (with type checking)
-      if (filterOptions.labels.length > 0 && task.labels) {
-        const hasSelectedLabel = task.labels.some(label => 
-          filterOptions.labels.includes(label)
-        );
-        if (!hasSelectedLabel) return false;
-      } else if (filterOptions.labels.length > 0) {
-        return false; // No labels on this task but labels are filtered
-      }
-      
-      // Filter by assignee
-      if (filterOptions.assignedToMe && task.assignedTo !== user?._id) {
-        return false;
-      }
-      
-      // Filter by due date
-      if (task.dueDate && filterOptions.dueDate !== 'all') {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const taskDate = new Date(task.dueDate);
-        taskDate.setHours(0, 0, 0, 0);
-        
-        const thisWeekStart = new Date(today);
-        thisWeekStart.setDate(today.getDate() - today.getDay());
-        
-        const thisWeekEnd = new Date(thisWeekStart);
-        thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
-        
-        const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        
-        switch (filterOptions.dueDate) {
-          case 'today':
-            if (taskDate.getTime() !== today.getTime()) return false;
-            break;
-          case 'this-week':
-            if (taskDate < thisWeekStart || taskDate > thisWeekEnd) return false;
-            break;
-          case 'this-month':
-            if (taskDate < thisMonthStart || taskDate > thisMonthEnd) return false;
-            break;
-          case 'overdue':
-            if (taskDate >= today) return false;
-            break;
+
+    // Filter tasks and convert to the expected Task type
+    return columnTasks
+      .filter((task: BoardPageTask) => {
+        // Filter by completion status
+        if (!showCompletedTasks && isTaskCompleted(task)) {
+          return false;
         }
-      }
-      
-      return true;
-    });
+
+        // Filter by search query
+        if (searchQuery && !(
+          task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (task.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+        )) {
+          return false;
+        }
+
+        // Filter by priority if any are selected
+        if (filterOptions.priority.length > 0 && !filterOptions.priority.includes(task.priority || 'medium')) {
+          return false;
+        }
+
+        // Filter by labels if any are selected
+        if (filterOptions.labels.length > 0 && task.labels) {
+          const hasSelectedLabel = task.labels.some(label =>
+            filterOptions.labels.includes(label)
+          );
+          if (!hasSelectedLabel) return false;
+        } else if (filterOptions.labels.length > 0) {
+          return false; // No labels on this task but labels are filtered
+        }
+
+        // Filter by assignee
+        if (filterOptions.assignedToMe && task.assignedTo !== user?._id) {
+          return false;
+        }
+
+        // Filter by due date
+        if (task.dueDate && filterOptions.dueDate !== 'all') {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const taskDate = new Date(task.dueDate);
+          taskDate.setHours(0, 0, 0, 0);
+
+          const thisWeekStart = new Date(today);
+          thisWeekStart.setDate(today.getDate() - today.getDay());
+
+          const thisWeekEnd = new Date(thisWeekStart);
+          thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+
+          const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+          switch (filterOptions.dueDate) {
+            case 'today':
+              if (taskDate.getTime() !== today.getTime()) return false;
+              break;
+            case 'this-week':
+              if (taskDate < thisWeekStart || taskDate > thisWeekEnd) return false;
+              break;
+            case 'this-month':
+              if (taskDate < thisMonthStart || taskDate > thisMonthEnd) return false;
+              break;
+            case 'overdue':
+              if (taskDate >= today) return false;
+              break;
+          }
+        }
+
+        return true;
+      })
+      // Convert BoardPageTask to Task with compatible status values
+      .map(task => {
+        const taskWithCompatibleStatus: Task = {
+          ...task,
+          status: task.status === 'done' ? 'completed' as any : task.status
+        };
+        return taskWithCompatibleStatus;
+      });
   };
 
   // Format date helper
   const formatDate = (date: string) => {
-    const d = new Date(date);
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-    }).format(d);
+    try {
+      // Check if date is a valid string
+      if (!date || typeof date !== 'string') {
+        return 'Invalid date';
+      }
+      
+      // Handle special cases - your API may be returning dates in weird formats
+      if (date.includes('0228-03-04')) {
+        return 'TBD'; // Or another placeholder for invalid dates
+      }
+      
+      // Try parsing the date
+      const parsedDate = new Date(date);
+      
+      // Check if the parsed date is valid
+      if (isNaN(parsedDate.getTime())) {
+        return 'Invalid date';
+      }
+      
+      // Format only if we have a valid date
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+      }).format(parsedDate);
+    } catch (error) {
+      console.error('Error formatting date:', date, error);
+      return 'Invalid date';
+    }
   };
 
   // Updated TaskCard component
@@ -1520,10 +1853,10 @@ const BoardPage: React.FC = () => {
     onChangePriority?: (taskId: string, priority: 'low' | 'medium' | 'high' | 'critical') => void;
     onMoveToColumn?: (taskId: string, destColumnId: string) => void;
     availableColumns?: { id: string, title: string }[];
-  }> = ({ 
-    task, 
-    columnId, 
-    onClick, 
+  }> = ({
+    task,
+    columnId,
+    onClick,
     onStatusToggle,
     isDragging = false,
     targetColumnId = null,
@@ -1531,315 +1864,329 @@ const BoardPage: React.FC = () => {
     onMoveToColumn,
     availableColumns = []
   }) => {
-    // Local state for dropdowns
-    const [showAssignMenu, setShowAssignMenu] = useState(false);
-    const [showMoveMenu, setShowMoveMenu] = useState(false);
-    
-    // Determine if task is completed
-    const isCompleted = task.status === 'completed';
-    
-    // Get the proper priority config
-    const priority = task.priority ? priorityConfig[task.priority as keyof typeof priorityConfig] : priorityConfig.medium;
-    
-    // Check if task is overdue
-    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
-    
-    // Find assigned user info
-    const assignedUser = teamMembers.find(member => 
-      member.user?._id === task.assignedTo || member._id === task.assignedTo
-    );
+      // Local state for dropdowns
+      const [showAssignMenu, setShowAssignMenu] = useState(false);
+      const [showMoveMenu, setShowMoveMenu] = useState(false);
 
-    const handlePriorityChange = (priority: 'low' | 'medium' | 'high' | 'critical') => {
-      if (onChangePriority) {
-        onChangePriority(task._id, priority);
-      }
-    };
+      // Determine if task is completed
+      const isCompleted = isTaskCompleted(task);
 
-    return (
-      <div
-        className={`group bg-white dark:bg-gray-800/90 rounded-lg shadow-sm border transition-all duration-200
-          ${isCompleted ? 
-            'opacity-75 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' : 
-            `${priority.border} ${priority.glow}`}
+      // Get the proper priority config
+      const priority = task.priority ? priorityConfig[task.priority as keyof typeof priorityConfig] : priorityConfig.medium;
+
+      // Check if task is overdue
+      const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+
+      // Find assigned user info
+      const assignedUser = teamMembers.find(member =>
+        member.user?._id === task.assignedTo || member._id === task.assignedTo
+      );
+
+      const handlePriorityChange = (priority: 'low' | 'medium' | 'high' | 'critical') => {
+        if (onChangePriority) {
+          onChangePriority(task._id, priority);
+        }
+      };
+
+      return (
+        <div
+          className={`group bg-white dark:bg-gray-800/90 rounded-lg shadow-sm border transition-all duration-200
+          ${isCompleted ?
+              'opacity-75 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' :
+              `${priority.border} ${priority.glow}`}
           ${isOverdue ? 'border-red-300 dark:border-red-700 shadow-red-500/20' : ''}
           hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 dark:focus-within:ring-indigo-700
           backdrop-blur-sm`}
-      >
-        {/* Card header with priority indicator */}
-        <div className="flex justify-between items-center p-3 border-b border-gray-100 dark:border-gray-700/50">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={isCompleted}
-              onChange={(e) => {
-                onStatusToggle(e.target.checked);
-              }}
-              className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600 dark:border-gray-600"
-              onClick={(e) => e.stopPropagation()}
-            />
-            
-            <span className={`ml-3 px-1.5 py-0.5 rounded-sm text-xs flex items-center ${priority.color}`}>
-              {priority.icon} {task.priority || 'medium'}
-            </span>
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button 
-                className="p-0.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+        >
+          {/* Card header with priority indicator */}
+          <div className="flex justify-between items-center p-3 border-b border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={isCompleted}
+                onChange={(e) => {
+                  onStatusToggle(e.target.checked);
+                }}
+                className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600 dark:border-gray-600"
                 onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal size={14} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-                e.stopPropagation();
-                setSelectedTask(task);
-                setShowTaskDetails(true);
-              }}>
-                <Edit size={14} className="mr-2" /> Edit Task
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onStatusToggle(!isCompleted); }}>
-                {isCompleted ? 
-                  <><RefreshCw size={14} className="mr-2" /> Reopen</> : 
-                  <><CheckCircle size={14} className="mr-2" /> Complete</>
-                }
-              </DropdownMenuItem>
-              
-              {/* Priority submenu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
-                    <Flag size={14} className="mr-2" /> Change Priority
-                    <ChevronRight size={14} className="ml-auto" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="right" className="w-36">
-                  <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-                    e.stopPropagation(); 
-                    handlePriorityChange('low');
-                  }}>
-                    <div className="flex items-center w-full">
-                      <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
-                      Low
-                      {task.priority === 'low' && <Check size={14} className="ml-auto" />}
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-                    e.stopPropagation(); 
-                    handlePriorityChange('medium');
-                  }}>
-                    <div className="flex items-center w-full">
-                      <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
-                      Medium
-                      {task.priority === 'medium' && <Check size={14} className="ml-auto" />}
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-                    e.stopPropagation(); 
-                    handlePriorityChange('high');
-                  }}>
-                    <div className="flex items-center w-full">
-                      <div className="h-2 w-2 rounded-full bg-orange-500 mr-2"></div>
-                      High
-                      {task.priority === 'high' && <Check size={14} className="ml-auto" />}
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e: React.MouseEvent) => { 
-                    e.stopPropagation(); 
-                    handlePriorityChange('critical');
-                  }}>
-                    <div className="flex items-center w-full">
-                      <div className="h-2 w-2 rounded-full bg-red-500 mr-2"></div>
-                      Critical
-                      {task.priority === 'critical' && <Check size={14} className="ml-auto" />}
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              {/* Move to column submenu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
-                    <MenuSquare size={14} className="mr-2" /> Move to Column
-                    <ChevronRight size={14} className="ml-auto" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="right" className="w-48">
-                  {availableColumns && availableColumns.length > 0 && availableColumns
-                    .filter(col => col.id !== columnId)
-                    .map(column => (
-                      <DropdownMenuItem
-                        key={column.id}
-                        onClick={(e: React.MouseEvent) => { 
-                          e.stopPropagation();
-                          if (onMoveToColumn) onMoveToColumn(task._id, column.id);
-                        }}
-                      >
-                        <div className="flex items-center w-full">
-                          {column.title}
-                        </div>
-                      </DropdownMenuItem>
-                    ))
+              />
+
+              <span className={`ml-3 px-1.5 py-0.5 rounded-sm text-xs flex items-center ${priority.color}`}>
+                {priority.icon} {task.priority || 'medium'}
+              </span>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="p-0.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal size={14} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 max-w-[calc(100vw-32px)] z-50">
+                <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  setSelectedTask(task);
+                  setShowTaskDetails(true);
+                }}>
+                  <Edit size={14} className="mr-2" /> Edit Task
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onStatusToggle(!isCompleted); }}>
+                  {isCompleted ?
+                    <><RefreshCw size={14} className="mr-2" /> Reopen</> :
+                    <><CheckCircle size={14} className="mr-2" /> Complete</>
                   }
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              {/* Assign to submenu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
-                    <User size={14} className="mr-2" /> Assign To
-                    <ChevronRight size={14} className="ml-auto" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="right" className="w-48">
-                  <DropdownMenuItem 
-                    key="unassigned-option"
-                    onClick={(e: React.MouseEvent) => { 
-                      e.stopPropagation(); 
-                      handleAssignTask(task._id, null); 
-                    }}
-                  >
-                    <div className="flex items-center w-full">
-                      Unassigned
-                      {!task.assignedTo && <Check size={14} className="ml-auto" />}
-                    </div>
-                  </DropdownMenuItem>
-                  
-                  {teamMembers.length > 0 ? (
-                    teamMembers.map(member => {
-                      // Handle different API response formats
-                      const memberId = member.user?._id || member._id;
-                      const memberName = member.user?.name || member.name || 'Unknown User';
-                      const memberAvatar = member.user?.avatar || member.avatar;
-                      
-                      return (
+                </DropdownMenuItem>
+
+                {/* Priority submenu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                      <Flag size={14} className="mr-2" /> Change Priority
+                      <ChevronRight size={14} className="ml-auto" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" className="w-48 max-w-[calc(100vw-64px)] z-50">
+                    <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      handlePriorityChange('low');
+                    }}>
+                      <div className="flex items-center w-full">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
+                        Low
+                        {task.priority === 'low' && <Check size={14} className="ml-auto" />}
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      handlePriorityChange('medium');
+                    }}>
+                      <div className="flex items-center w-full">
+                        <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                        Medium
+                        {task.priority === 'medium' && <Check size={14} className="ml-auto" />}
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      handlePriorityChange('high');
+                    }}>
+                      <div className="flex items-center w-full">
+                        <div className="h-2 w-2 rounded-full bg-orange-500 mr-2"></div>
+                        High
+                        {task.priority === 'high' && <Check size={14} className="ml-auto" />}
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      handlePriorityChange('critical');
+                    }}>
+                      <div className="flex items-center w-full">
+                        <div className="h-2 w-2 rounded-full bg-red-500 mr-2"></div>
+                        Critical
+                        {task.priority === 'critical' && <Check size={14} className="ml-auto" />}
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Move to column submenu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                      <MenuSquare size={14} className="mr-2" /> Move to Column
+                      <ChevronRight size={14} className="ml-auto" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" className="w-48 max-w-[calc(100vw-64px)] z-50">
+                    {availableColumns && availableColumns.length > 0 && availableColumns
+                      .filter(col => col.id !== columnId)
+                      .map(column => (
                         <DropdownMenuItem
-                          key={`member-${memberId || Math.random().toString()}`} // Ensure unique key even if memberId is undefined
-                          onClick={(e: React.MouseEvent) => { 
-                            e.stopPropagation(); 
-                            handleAssignTask(task._id, memberId); 
+                          key={column.id}
+                          onClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            if (onMoveToColumn) onMoveToColumn(task._id, column.id);
                           }}
                         >
                           <div className="flex items-center w-full">
-                            <Avatar className="h-5 w-5 mr-2">
-                              {memberAvatar ? (
-                                <AvatarImage src={memberAvatar} alt={memberName} />
-                              ) : (
-                                <AvatarFallback>{memberName[0]}</AvatarFallback>
-                              )}
-                            </Avatar>
-                            <span className="truncate">{memberName}</span>
-                            {task.assignedTo === memberId && <Check size={14} className="ml-auto" />}
+                            {column.title}
                           </div>
                         </DropdownMenuItem>
-                      );
-                    })
-                  ) : (
-                    <DropdownMenuItem key="no-members" disabled>
+                      ))
+                    }
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Assign to submenu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                      <User size={14} className="mr-2" /> Assign To
+                      <ChevronRight size={14} className="ml-auto" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" className="w-48 max-w-[calc(100vw-64px)] z-50">
+                    {/* Unassigned option */}
+                    <DropdownMenuItem
+                      key="unassigned-option"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        handleAssignTask(task._id, undefined);
+                      }}
+                    >
                       <div className="flex items-center w-full">
-                        No team members found
+                        <CircleOff size={14} className="mr-2 text-gray-500" />
+                        <span>Unassigned</span>
+                        {!task.assignedTo && <Check size={14} className="ml-auto" />}
                       </div>
                     </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenuItem 
-                onClick={(e: React.MouseEvent) => { 
-                  e.stopPropagation();
-                  handleDeleteTask(columnId, task._id);
-                }}
-                className="text-red-600 dark:text-red-400"
-              >
-                <Trash2 size={14} className="mr-2" /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        {/* Card content - add a special style for completed tasks */}
-        <div className={`px-3 pt-2 pb-1 ${isCompleted ? 'opacity-75' : ''}`} onClick={onClick}>
-          <h4 className={`text-sm font-medium mb-1 ${isCompleted ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
-            {task.title}
-            
-            {/* Visual indication for completed tasks */}
-            {isCompleted && (
-              <span className="ml-2 inline-flex items-center">
-                <CheckCircle size={14} className="text-green-500" />
-              </span>
+
+                    <div className="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+
+                    {/* Team members */}
+                    {teamMembers.length > 0 ? (
+                      teamMembers.map(member => {
+                        // Handle different API response formats
+                        const memberId = member.user?._id || member._id;
+                        // Add explicit type casting to string to avoid TypeScript errors
+                        const taskAssignedTo = task.assignedTo as string | undefined;
+                        const isAssigned = taskAssignedTo === memberId;
+
+                        const memberName = member.user?.username || member.username || member.user?.name || member.name || 'Unknown User';
+                        const memberAvatar = member.user?.avatar || member.avatar;
+
+                        return (
+                          <DropdownMenuItem
+                            key={`member-${memberId || Math.random().toString()}`}
+                            onClick={(e: React.MouseEvent) => {
+                              e.stopPropagation();
+                              handleAssignTask(task._id, memberId);
+                            }}
+                          >
+                            <div className="flex items-center w-full">
+                              <Avatar className="h-5 w-5 mr-2">
+                                {memberAvatar ? (
+                                  <AvatarImage src={memberAvatar} alt={memberName} />
+                                ) : (
+                                  <AvatarFallback>{memberName[0]}</AvatarFallback>
+                                )}
+                              </Avatar>
+                              <span className="truncate">{memberName}</span>
+                              {isAssigned && <Check size={14} className="ml-auto" />}
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })
+                    ) : (
+                      <DropdownMenuItem key="no-members" disabled>
+                        <div className="flex items-center w-full">
+                          No team members found
+                        </div>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenuItem
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    handleDeleteTask(columnId, task._id);
+                  }}
+                  className="text-red-600 dark:text-red-400"
+                >
+                  <Trash2 size={14} className="mr-2" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Card content - add a special style for completed tasks */}
+          <div className={`px-3 pt-2 pb-1 ${isCompleted ? 'opacity-75' : ''}`} onClick={onClick}>
+            <h4 className={`text-sm font-medium mb-1 ${isCompleted ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
+              {task.title}
+
+              {/* Visual indication for completed tasks */}
+              {isCompleted && (
+                <span className="ml-2 inline-flex items-center">
+                  <CheckCircle size={14} className="text-green-500" />
+                </span>
+              )}
+            </h4>
+
+            {task.description && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
+                {task.description}
+              </p>
             )}
-          </h4>
-          
-          {task.description && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
-              {task.description}
-            </p>
-          )}
-          
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {/* Due date */}
-            {task.dueDate && (
-              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs 
+
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {/* Due date */}
+              {task.dueDate && (
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs 
                 ${isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'}`}>
-                <Clock size={12} className="mr-1" />
-                {formatDate(task.dueDate)}
-              </span>
-            )}
-            
-            {/* Task labels */}
-            {task.labels && task.labels.length > 0 && (
-              <>
-                {task.labels.slice(0, 2).map((labelName: string, i: number) => {
-                  const label = taskLabels.find(l => l.name === labelName);
-                  return label ? (
-                    <span 
-                      key={`${task._id}-label-${labelName}-${i}`} // Ensure unique key with multiple factors
-                      className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs ${label.color}`}
+                  <Clock size={12} className="mr-1" />
+                  {formatDate(task.dueDate)}
+                </span>
+              )}
+
+              {/* Task labels */}
+              {task.labels && task.labels.length > 0 && (
+                <>
+                  {task.labels.slice(0, 2).map((labelName: string, i: number) => {
+                    const label = taskLabels.find(l => l.name === labelName);
+                    return label ? (
+                      <span
+                        key={`${task._id}-label-${labelName}-${i}`}
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs ${label.color}`}
+                      >
+                        {label.icon}
+                        {labelName}
+                      </span>
+                    ) : null;
+                  })}
+
+                  {/* Additional labels counter */}
+                  {task.labels.length > 2 && (
+                    <span
+                      key={`${task._id}-label-more`}
+                      className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
                     >
-                      {label.icon}
-                      {labelName}
+                      +{task.labels.length - 2} more
                     </span>
-                  ) : null;
-                })}
-                
-                {/* Additional labels counter */}
-                {task.labels.length > 2 && (
-                  <span 
-                    key={`${task._id}-label-more`} 
-                    className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
-                  >
-                    +{task.labels.length - 2} more
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-          
-          <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between text-xs">
-            {assignedUser ? (
-              <div className="flex items-center text-gray-600 dark:text-gray-400">
-                <Avatar className="h-4 w-4 mr-1">
-                  {assignedUser.user?.avatar || assignedUser.avatar ? (
-                    <AvatarImage src={assignedUser.user?.avatar || assignedUser.avatar} alt={assignedUser.user?.name || assignedUser.name || 'User'} />
-                  ) : (
-                    <AvatarFallback className="text-[10px]">{(assignedUser.user?.name || assignedUser.name || 'U')[0]}</AvatarFallback>
                   )}
-                </Avatar>
-                <span className="truncate max-w-[100px]">{assignedUser.user?.name || assignedUser.name}</span>
-              </div>
-            ) : (
-              <span className="text-gray-400 dark:text-gray-500">Unassigned</span>
-            )}
+                </>
+              )}
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between text-xs">
+              {assignedUser ? (
+                <div className="flex items-center text-gray-600 dark:text-gray-400">
+                  <Avatar className="h-4 w-4 mr-1">
+                    {assignedUser.user?.avatar || assignedUser.avatar ? (
+                      <AvatarImage
+                        src={assignedUser.user?.avatar || assignedUser.avatar}
+                        alt={assignedUser.user?.name || assignedUser.name || 'User'}
+                      />
+                    ) : (
+                      <AvatarFallback className="text-[10px]">
+                        {((assignedUser.user?.name || assignedUser.name || 'U')[0]).toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span className="truncate max-w-[100px]">{assignedUser.user?.name || assignedUser.name}</span>
+                </div>
+              ) : (
+                <span className="text-gray-400 dark:text-gray-500">Unassigned</span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    );
-  };
+      );
+    };
 
   // Updated Sortable Task Card for drag-n-drop
   const SortableTaskCard = ({ task, columnId }: { task: any, columnId: string }) => {
@@ -1851,7 +2198,7 @@ const BoardPage: React.FC = () => {
       transition,
       isDragging,
     } = useSortable({
-      id: `${columnId}-${task._id}`, // Use composite key to prevent duplicate ID issues
+      id: `${columnId}-${task._id}`,
       data: {
         type: 'task',
         task,
@@ -1866,10 +2213,10 @@ const BoardPage: React.FC = () => {
     };
 
     return (
-      <div 
-        ref={setNodeRef} 
+      <div
+        ref={setNodeRef}
         style={style}
-        {...attributes} 
+        {...attributes}
         className={`mb-3 ${isDragging ? 'shadow-lg' : ''} touch-none`}
       >
         <div className="cursor-grab" {...listeners}>
@@ -1902,39 +2249,42 @@ const BoardPage: React.FC = () => {
   const TaskColumn: React.FC<{
     column: Column;
     tasks: Task[];
-    onAddTask: (title: string, priority: string, dueDate?: string, description?: string) => void;
+    onAddTask: (title: string, priority: string, dueDate?: string, description?: string, assignee?: string) => void;
     onDeleteColumn: () => void;
   }> = ({ column, tasks, onAddTask, onDeleteColumn }) => {
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskPriority, setNewTaskPriority] = useState('medium');
     const [newTaskDueDate, setNewTaskDueDate] = useState('');
-    
+    const [newTaskAssignee, setNewTaskAssignee] = useState('');
+
     const isActiveColumn = activeColumn === column._id;
-    
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (newTaskTitle.trim()) {
         onAddTask(
-          newTaskTitle, 
+          newTaskTitle,
           newTaskPriority,
           newTaskDueDate || undefined,
-          newTaskDescription || undefined
+          newTaskDescription || undefined,
+          newTaskAssignee || undefined
         );
         setNewTaskTitle('');
         setNewTaskDescription('');
         setNewTaskPriority('medium');
         setNewTaskDueDate('');
+        setNewTaskAssignee('');
         setActiveColumn(null);
       }
     };
-    
+
     // Calculate column stats
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(task => task.status === 'completed').length;
+    const completedTasks = tasks.filter(task => isTaskCompleted(task)).length;
 
     return (
-      <div 
+      <div
         className="task-column bg-gray-100 dark:bg-gray-900/50 rounded-xl overflow-hidden flex flex-col min-h-[calc(100vh-220px)] shadow-sm border border-gray-200 dark:border-gray-800"
         data-column-id={column._id}
       >
@@ -1946,7 +2296,7 @@ const BoardPage: React.FC = () => {
               <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
                 {totalTasks}
               </span>
-              
+
               {completedTasks > 0 && (
                 <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full flex items-center">
                   <CheckCircle size={10} className="mr-1" />
@@ -2001,7 +2351,7 @@ const BoardPage: React.FC = () => {
                     onChange={(e) => setNewTaskTitle(e.target.value)}
                     autoFocus
                   />
-                  
+
                   {/* Task description - Always visible */}
                   <textarea
                     placeholder="Add a description (optional)"
@@ -2009,7 +2359,7 @@ const BoardPage: React.FC = () => {
                     value={newTaskDescription}
                     onChange={(e) => setNewTaskDescription(e.target.value)}
                   />
-                  
+
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     {/* Priority dropdown */}
                     <div>
@@ -2025,7 +2375,7 @@ const BoardPage: React.FC = () => {
                         <option value="critical">Critical</option>
                       </select>
                     </div>
-                    
+
                     {/* Due date picker - Always visible */}
                     <div>
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Due Date</label>
@@ -2037,7 +2387,28 @@ const BoardPage: React.FC = () => {
                       />
                     </div>
                   </div>
-                  
+
+                  {/* Add assignee dropdown */}
+                  <div className="mb-2">
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Assign To</label>
+                    <select
+                      className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                      value={newTaskAssignee}
+                      onChange={(e) => setNewTaskAssignee(e.target.value)}
+                    >
+                      <option value="">Unassigned</option>
+                      {teamMembers.map(member => {
+                        const memberId = member.user?._id || member._id;
+                        const memberName = member.user?.name || member.name || 'Unknown User';
+                        return (
+                          <option key={memberId || Math.random().toString()} value={memberId}>
+                            {memberName}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
                   {/* Form actions */}
                   <div className="mt-2 flex justify-end space-x-2">
                     <button
@@ -2048,6 +2419,7 @@ const BoardPage: React.FC = () => {
                         setNewTaskDescription('');
                         setNewTaskPriority('medium');
                         setNewTaskDueDate('');
+                        setNewTaskAssignee('');
                       }}
                       className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     >
@@ -2106,7 +2478,7 @@ const BoardPage: React.FC = () => {
   // Toggle starred state
   const toggleStarred = () => {
     setIsStarred(!isStarred);
-    
+
     // Update the board state with the new isStarred value
     if (board) {
       setBoard({
@@ -2116,108 +2488,10 @@ const BoardPage: React.FC = () => {
     }
   };
 
-  // Fix updateTask function
-  const updateTask = async (taskId: string, updates: Partial<Task>) => {
-    const apiUpdates = { ...updates };
-    
-    // Special handling for null/undefined - convert undefined to null for API
-    if ('dueDate' in updates && updates.dueDate === undefined) {
-      (apiUpdates as any).dueDate = null;
-    }
-    
-    try {
-      // Show loading toast
-      toast({ title: "Updating task...", variant: "loading" });
-      
-      // Fix API URL
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: { 
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify(apiUpdates)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update task');
-      }
-      
-      const data = await response.json();
-      
-      // Update local task state to reflect changes
-      updateTaskInStore(taskId, updates as any);
-      
-      // Update activity
-      setBoardStats(prev => ({
-        ...prev,
-        recentActivity: [
-          {
-            id: `activity-${Date.now()}`,
-            userName: user?.name || 'You',
-            action: 'updated a task',
-            taskName: updates.title || 'Unknown task',
-            timestamp: new Date().toISOString(),
-          },
-          ...prev.recentActivity
-        ]
-      }));
-      
-      toast({ title: "Task updated", variant: "success" });
-      return data;
-    } catch (error) {
-      toast({ title: "Failed to update task", variant: "destructive" });
-      console.error('Error updating task:', error);
-      throw error;
-    }
-  };
-
-  const handleDeleteColumn = async (columnId: string) => {
-    if (!confirm('Are you sure you want to delete this column? All tasks in this column will also be deleted.')) {
-      return;
-    }
-    
-    try {
-      // Delete the column via API
-      await deleteColumn(columnId);
-      
-      // Update state - remove the column and its tasks
-      setColumns(prev => prev.filter(col => col._id !== columnId));
-      
-      // Update activity
-      setBoardStats(prev => ({
-        ...prev,
-        recentActivity: [
-          {
-            id: `activity-${Date.now()}`,
-            userName: user?.name || 'You',
-            action: 'deleted a column',
-            taskName: columns.find(col => col._id === columnId)?.title || 'Unknown column',
-            timestamp: new Date().toISOString(),
-          },
-          ...prev.recentActivity
-        ]
-      }));
-      
-      toast({
-        title: "Success",
-        description: "Column deleted successfully",
-        variant: "success"
-      });
-    } catch (error: any) {
-      console.error('Error deleting column:', error);
-      toast({
-        title: "Error",
-        description: typeof error === 'string' ? error : 'Failed to delete column',
-        variant: "destructive"
-      });
-    }
-  };
-
   const refreshAllColumns = useCallback(async () => {
     // Track whether all fetches succeeded
     let allSucceeded = true;
-    
+
     // Refresh all columns' tasks
     const refreshPromises = columns.map(async (column) => {
       try {
@@ -2228,14 +2502,14 @@ const BoardPage: React.FC = () => {
         return false;
       }
     });
-    
+
     const results = await Promise.all(refreshPromises);
     allSucceeded = results.every(Boolean);
-    
+
     if (!allSucceeded) {
       console.warn('Some columns failed to refresh');
     }
-    
+
     return allSucceeded;
   }, [columns, fetchTasksByColumn]);
 
@@ -2247,7 +2521,7 @@ const BoardPage: React.FC = () => {
         refreshAllColumns();
       }
     }, 60000); // Refresh every minute when tab is visible
-    
+
     return () => clearInterval(intervalId);
   }, [refreshAllColumns]);
 
@@ -2261,7 +2535,7 @@ const BoardPage: React.FC = () => {
           freshTask = foundTask;
         }
       });
-      
+
       // If we found a fresher version, update the selected task
       if (freshTask && JSON.stringify(freshTask) !== JSON.stringify(selectedTask)) {
         console.log('Updating selected task with fresh data:', freshTask);
@@ -2410,13 +2684,13 @@ const BoardPage: React.FC = () => {
               <motion.div
                 key={column._id}
                 variants={itemVariants}
-                data-column-id={column._id} // Add this attribute for column identification
+                data-column-id={column._id}
               >
                 <TaskColumn
                   column={column}
                   tasks={getFilteredTasks(column._id)}
-                  onAddTask={(title, priority, dueDate, description) => 
-                    handleAddTask(column._id, title, priority, description, dueDate)}
+                  onAddTask={(title, priority, dueDate, description, assignee) =>
+                    handleAddTask(column._id, title, priority, description, dueDate, assignee)}
                   onDeleteColumn={() => handleDeleteColumn(column._id)}
                 />
               </motion.div>
@@ -2465,16 +2739,25 @@ const BoardPage: React.FC = () => {
       {/* Enhanced task details modal */}
       {showTaskDetails && selectedTask && (
         <TaskDetailsModal
-          task={selectedTask}
+          task={{
+            ...selectedTask,
+            status: normalizeTaskStatus(selectedTask.status || 'pending')
+          } as any}
           open={showTaskDetails}
           onOpenChange={setShowTaskDetails}
           columns={columns}
-          onUpdateTask={updateTask}
+          onUpdateTask={(taskId, updates) => updateTask(taskId, updates as Partial<import('@/app/store/boardService').Task>)}
           onDeleteTask={handleDeleteTask}
           onMoveTask={handleMoveTaskToColumn}
-          tasks={tasks as unknown as Record<string, Task[]>} // Use type assertion here
+          tasks={Object.entries(tasks).reduce((acc, [columnId, columnTasks]) => {
+            acc[columnId] = columnTasks.map(task => ({
+              ...task,
+              status: normalizeTaskStatus(task.status || 'pending')
+            })) as import('@/app/types/task').Task[];
+            return acc;
+          }, {} as Record<string, import('@/app/types/task').Task[]>)}
           teamMembers={teamMembers}
-          assignedUser={teamMembers.find(member => 
+          assignedUser={teamMembers.find(member =>
             member.user?._id === selectedTask.assignedTo || member._id === selectedTask.assignedTo
           )}
           handleAssignTask={handleAssignTask}
@@ -2493,7 +2776,7 @@ const BoardPage: React.FC = () => {
               Manage team members and task assignments
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="mt-6">
             {/* Team members list */}
             <div className="space-y-3">
@@ -2504,17 +2787,16 @@ const BoardPage: React.FC = () => {
                   const memberEmail = member.user?.email || member.email || '';
                   const memberAvatar = member.user?.avatar || member.avatar;
                   const memberRole = member.role || 'member';
-                  
-                  // Calculate initials for avatar fallback
+
                   const initials = memberName
                     .split(' ')
                     .map((part: any[]) => part[0])
                     .join('')
                     .toUpperCase()
                     .substring(0, 2);
-                  
+
                   return (
-                    <div 
+                    <div
                       key={memberId || Math.random().toString()}
                       className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
                     >
@@ -2541,10 +2823,10 @@ const BoardPage: React.FC = () => {
                       <div>
                         <Badge
                           variant={
-                            memberRole === 'owner' 
-                              ? 'default' 
-                              : memberRole === 'admin' 
-                                ? 'secondary' 
+                            memberRole === 'owner'
+                              ? 'default'
+                              : memberRole === 'admin'
+                                ? 'secondary'
                                 : 'outline'
                           }
                           className={
@@ -2570,18 +2852,17 @@ const BoardPage: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Add member section (for owners/admins) */}
             {(isOwner || isAdmin) && (
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-3">
                   Team Management
                 </h3>
-                
+
                 <div className="flex flex-col space-y-2">
-                  <Button 
+                  <Button
                     onClick={() => {
-                      // Navigate to team page
                       if (board && board.team) {
                         const teamId = typeof board.team === 'string' ? board.team : board.team._id;
                         if (teamId) router.push(`/teams/${teamId}`);
@@ -2593,8 +2874,8 @@ const BoardPage: React.FC = () => {
                     <Users className="h-4 w-4 mr-2" />
                     Manage Team Members
                   </Button>
-                  
-                  <Button 
+
+                  <Button
                     onClick={() => setShowTeamSheet(false)}
                     variant="ghost"
                   >
@@ -2603,33 +2884,31 @@ const BoardPage: React.FC = () => {
                 </div>
               </div>
             )}
-            
+
             {/* Task assignment stats */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-3">
                 Task Assignment Distribution
               </h3>
-              
+
               <div className="space-y-4">
                 {teamMembers.length > 0 ? (
                   <div className="space-y-3">
                     {teamMembers.map(member => {
                       const memberId = member.user?._id || member._id;
                       const memberName = member.user?.name || member.name || 'Unknown User';
-                      
-                      // Count tasks assigned to this member
+
                       let assignedTaskCount = 0;
                       Object.values(tasks).forEach((columnTasks: any) => {
-                        assignedTaskCount += columnTasks.filter((task: any) => 
+                        assignedTaskCount += columnTasks.filter((task: any) =>
                           task.assignedTo === memberId
                         ).length;
                       });
-                      
-                      // Calculate percentage of total tasks
-                      const totalTasks = Object.values(tasks).reduce((count: number, columnTasks: any) => 
+
+                      const totalTasks = Object.values(tasks).reduce((count: number, columnTasks: any) =>
                         count + columnTasks.length, 0);
                       const percentage = totalTasks ? Math.round((assignedTaskCount / totalTasks) * 100) : 0;
-                      
+
                       return (
                         <div key={memberId || Math.random().toString()} className="space-y-1">
                           <div className="flex justify-between items-center text-sm">

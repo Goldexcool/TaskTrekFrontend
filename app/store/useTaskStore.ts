@@ -4,13 +4,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import useAuthStore from './useAuthStore'; 
 import { shallow } from 'zustand/shallow';
-import api from '../utils/apiClient'; 
+import api from '../utils/apiClient';
 
 // Modify your Task interface to make it compatible with boardService.Task
 export interface Task {
   _id: string;
   title: string;
   description?: string;
+  completed?: boolean;
+  isCompleted?: boolean; 
   status?: string | 'pending' | 'in-progress' | 'completed' | 'blocked'; // Make this more flexible
   priority?: 'low' | 'medium' | 'high' | 'critical';
   position?: number;
@@ -92,7 +94,7 @@ export interface TaskState {
   fetchTasksByColumn: (columnId: string) => Promise<Task[]>;
   addTask: (task: Task) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
-  deleteTask: (columnId: string, taskId: string) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, sourceColumnId: string, destinationColumnId: string, position: number) => Promise<void>;
   clearTasks: () => void;
 }
@@ -108,11 +110,20 @@ const useTaskStore = create<TaskState>()(
         set(state => ({ ...state, isLoading: true, error: null }));
         
         try {
+          // IMPORTANT: Use relative path, not full URL 
+          // The api client already has the baseURL
           const response = await api.get(`/tasks/column/${columnId}`);
           
-          // Axios automatically converts response to JSON
-          const data = response.data;
-          const uniqueTasks = data.data.map((task: any) => ({
+          // Handle potentially different response formats
+          let taskData = [];
+          if (response.data?.data) {
+            taskData = response.data.data;
+          } else if (Array.isArray(response.data)) {
+            taskData = response.data;
+          }
+          
+          // Map tasks and ensure consistent properties
+          const uniqueTasks = taskData.map((task: any) => ({
             ...task,
             column: columnId,
             completed: task.status === 'completed' || task.completed === true,
@@ -185,49 +196,51 @@ const useTaskStore = create<TaskState>()(
         });
       },
       
-      deleteTask: async (columnId: string, taskId: string) => {
+      deleteTask: async (taskId: string) => {
         try {
+          const { accessToken } = useAuthStore.getState();
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-          const accessToken = useAuthStore.getState().accessToken;
           
-          if (!accessToken) {
-            throw new Error('Authentication required');
+          if (!apiUrl || !accessToken) {
+            throw new Error('API URL or authorization token is missing');
           }
           
-          // Optimistically update the UI
-          set(state => {
-            const columnTasks = state.tasks[columnId] || [];
-            return {
-              ...state,
-              tasks: {
-                ...state.tasks,
-                [columnId]: columnTasks.filter(task => task._id !== taskId)
-              }
-            };
+          const response = await fetch(`${apiUrl}/tasks/${taskId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
           });
           
-          // Make API call to delete the task using axios instead of fetch
-          const response = await api.delete(`/tasks/${taskId}`);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Failed to delete task: ${response.status}`);
+          }
           
-          // No need to check response.ok as axios throws on error status codes
-          return response.data;
-        } catch (error: any) {
+          const data = await response.json();
+          
+          set(state => {
+            const newState = { ...state };
+            
+            Object.keys(newState.tasks).forEach(columnId => {
+              newState.tasks[columnId] = newState.tasks[columnId].filter(
+                task => task._id !== taskId
+              );
+            });
+            
+            return newState;
+          });
+          
+          return data;
+        } catch (error) {
           console.error('Error deleting task:', error);
-          // Fetch the column tasks again to revert any optimistic updates
-          get().fetchTasksByColumn(columnId);
           throw error;
         }
       },
       
       moveTask: async (taskId: string, sourceColumnId: string, destinationColumnId: string, position: number) => {
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-          const accessToken = useAuthStore.getState().accessToken;
-          
-          if (!accessToken) {
-            throw new Error('Authentication required');
-          }
-          
           // Find the task to move
           const sourceTasks = get().tasks[sourceColumnId] || [];
           const taskToMove = sourceTasks.find(task => task._id === taskId);
@@ -256,27 +269,13 @@ const useTaskStore = create<TaskState>()(
             };
           });
           
-          // Make API call to move the task
-          const response = await fetch(`${apiUrl}/tasks/${taskId}/move`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sourceColumnId,
-              destinationColumnId,
-              position
-            }),
+          // Use api client instead of fetch
+          await api.patch(`/tasks/${taskId}/move`, {
+            sourceColumnId,
+            destinationColumnId,
+            position
           });
           
-          if (!response.ok) {
-            // If API call fails, revert the optimistic update
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Failed to move task: ${response.status}`);
-          }
-          
-          return;
         } catch (error: any) {
           console.error('Error moving task:', error);
           // Fetch both columns' tasks again to revert any optimistic updates

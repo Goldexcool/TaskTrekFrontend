@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
-import Draggable, { DraggableEventHandler } from 'react-draggable';
-import { Task } from '@/app/types/board';
+import React from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { Task } from '@/app/types/task';
 import TaskCard from './TaskCard';
 
 interface SortableTaskCardProps {
@@ -11,8 +11,9 @@ interface SortableTaskCardProps {
   onMoveTask?: (taskId: string, targetColumnId: string, position?: number) => Promise<void>;
   onSelectTask?: (task: Task) => void;
   onToggleTaskCompletion?: (columnId: string, taskId: string, isCompleted: boolean) => void;
-  activeTaskId?: string | null;
-  setActiveTaskId?: (taskId: string | null) => void;
+  teamMembers?: any[];
+  handleAssignTask?: (taskId: string, memberId: string | undefined) => Promise<void> | void;
+  onUpdateTask?: (taskId: string, updatedTask: Partial<Task>) => Promise<any> | void;
 }
 
 const SortableTaskCard: React.FC<SortableTaskCardProps> = ({
@@ -21,90 +22,50 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({
   onMoveTask,
   onSelectTask,
   onToggleTaskCompletion,
-  activeTaskId,
-  setActiveTaskId
+  teamMembers = [],
+  handleAssignTask,
+  onUpdateTask,
 }) => {
-  // Fix: specify non-null assertion to satisfy the RefObject<HTMLElement> requirement
-  const nodeRef = React.useRef<HTMLDivElement>(null!);
-  const [isDragging, setIsDragging] = useState(false);
-  
-  // Track which column we're hovering over
-  const [hoverColumnId, setHoverColumnId] = useState<string | null>(null);
-  
-  const handleStart: DraggableEventHandler = (e, _data) => {
-    e.stopPropagation();
-    setIsDragging(true);
-    setActiveTaskId?.(task._id);
-  };
-  
-  const handleDrag: DraggableEventHandler = (e, _data) => {
-    // Fix: Extract coordinates safely from the event
-    const clientX = 'clientX' in e ? e.clientX : (e as any).touches?.[0]?.clientX;
-    const clientY = 'clientY' in e ? e.clientY : (e as any).touches?.[0]?.clientY;
-    
-    if (typeof clientX !== 'number' || typeof clientY !== 'number') return;
-    
-    // Find column under pointer for visual feedback
-    const elementsUnder = document.elementsFromPoint(clientX, clientY);
-    
-    // Find element with data-column-id attribute
-    const columnElement = elementsUnder.find(el => {
-      if (el instanceof HTMLElement) {
-        return el.hasAttribute('data-column-id');
-      }
-      return false;
-    }) as HTMLElement | undefined;
-    
-    if (columnElement) {
-      const newColumnId = columnElement.dataset.columnId;
-      if (newColumnId !== hoverColumnId) {
-        setHoverColumnId(newColumnId || null);
-      }
-    } else {
-      setHoverColumnId(null);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `${columnId}-${task._id}`, // Use composite key to prevent duplicate ID issues
+    data: {
+      type: 'task',
+      task,
+      columnId, // This is fine for the internal data prop
+    },
+  });
+
+  const handleMoveTaskToColumn = async (taskId: string, destinationColumnId: string) => {
+    try {
+      await onMoveTask?.(taskId, destinationColumnId);
+    } catch (error) {
+      console.error('Error moving task:', error);
     }
   };
-  
-  // Fix: Remove async and properly handle promise
-  const handleStop: DraggableEventHandler = (e, _data) => {
-    setIsDragging(false);
-    setActiveTaskId?.(null);
-    
-    // Fix: Extract coordinates safely from the event
-    const clientX = 'clientX' in e ? e.clientX : (e as any).touches?.[0]?.clientX;
-    const clientY = 'clientY' in e ? e.clientY : (e as any).touches?.[0]?.clientY;
-    
-    if (typeof clientX !== 'number' || typeof clientY !== 'number') return;
-    
-    // Find column we dropped on
-    const elementsUnder = document.elementsFromPoint(clientX, clientY);
-    
-    // Find element with data-column-id attribute
-    const columnElement = elementsUnder.find(el => {
-      if (el instanceof HTMLElement) {
-        return el.hasAttribute('data-column-id');
+
+  const handleAssignTaskAdapter = handleAssignTask 
+    ? (taskId: string, memberId: string | undefined) => {
+        return handleAssignTask(taskId, memberId);
       }
-      return false;
-    }) as HTMLElement | undefined;
-    
-    if (columnElement) {
-      const targetColumnId = columnElement.dataset.columnId;
-      if (targetColumnId && targetColumnId !== columnId && onMoveTask) {
-        console.log(`Moving task ${task._id} to column ${targetColumnId}`);
-        // Use void to ignore Promise result
-        void onMoveTask(task._id, targetColumnId).catch(error => {
-          console.error('Error moving task:', error);
-        });
-      }
-    }
-    
-    setHoverColumnId(null);
-  };
-  
+    : undefined;
+
   return (
-    <div 
-      ref={nodeRef} 
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+        transition,
+      }}
       className={`mb-3 ${isDragging ? 'shadow-lg' : ''} touch-none`}
+      {...attributes}
+      {...listeners}
     >
       <div className="cursor-grab">
         <TaskCard
@@ -118,6 +79,9 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({
           onStatusToggle={(isCompleted) => {
             onToggleTaskCompletion?.(columnId, task._id, isCompleted);
           }}
+          teamMembers={teamMembers}
+          handleAssignTask={handleAssignTaskAdapter}
+          onUpdateTask={onUpdateTask}
         />
       </div>
     </div>

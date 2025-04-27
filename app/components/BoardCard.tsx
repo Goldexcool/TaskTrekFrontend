@@ -41,35 +41,35 @@ const BoardCard: React.FC<BoardCardProps> = ({
 }) => {
   // Process the background color/scheme 
   const getBoardBackgroundStyle = () => {
-    // First prioritize colorScheme if it exists
+    // First check if colorScheme exists and contains a gradient
     if (board.colorScheme) {
-      // Extract the background class from the colorScheme
-      const bgClass = board.colorScheme.split(' ')[0]; // Gets the first class which should be the bg-color
+      // Return the full class string without modification
       return {
-        className: bgClass
+        className: board.colorScheme
       };
     }
     
     // Fall back to backgroundColor if no colorScheme
-    if (!board.backgroundColor) {
-      return {
-        className: 'bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-800' // Default gradient
-      };
+    if (board.backgroundColor) {
+      if (board.backgroundColor.startsWith('#')) {
+        // It's a hex color
+        return { 
+          style: { backgroundColor: board.backgroundColor } 
+        };
+      } else {
+        // It's a Tailwind class
+        return {
+          className: board.backgroundColor
+        };
+      }
     }
     
-    // Check if it's a hex color
-    if (board.backgroundColor.startsWith('#')) {
-      return { 
-        style: { backgroundColor: board.backgroundColor } 
-      };
-    }
-    
-    // It's a Tailwind gradient class
+    // Default if nothing else works
     return {
-      className: `bg-gradient-to-r ${board.backgroundColor}`
+      className: 'bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-800'
     };
   };
-
+  
   const bgStyle = getBoardBackgroundStyle();
   const isDeleting = deletingId === board._id;
 
@@ -82,39 +82,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
           className={`h-32 relative overflow-hidden ${bgStyle.className || ''}`}
           style={bgStyle.style || {}}
         >
-          {/* Star indicator if board is starred */}
-          {board.isStarred && (
-            <div className="absolute top-3 right-3 bg-white/20 p-1 rounded-full backdrop-blur-sm">
-              <Star className="h-4 w-4 text-white" />
-            </div>
-          )}
-          
-          {/* Column badges shown on the card */}
-          {board.columns && board.columns.length > 0 && (
-            <div className="absolute bottom-2 left-3 flex flex-wrap gap-1 max-w-[90%]">
-              {board.columns.slice(0, 2).map((column, idx) => {
-                // If no tasks in this column, skip it
-                if (!column) return null;
-                
-                const cardColorClass = column.colorScheme || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-                
-                return (
-                  <span
-                    key={column._id || idx}
-                    className={`${cardColorClass} text-xs px-2 py-0.5 rounded-full`}
-                  >
-                    {column.title || column.name || 'Unnamed'}: {column.cardsCount || 0}
-                  </span>
-                );
-              })}
-              
-              {board.columns.length > 2 && (
-                <span className="text-xs bg-white/30 text-white rounded-full px-2 py-0.5 backdrop-blur-sm">
-                  +{board.columns.length - 2} more
-                </span>
-              )}
-            </div>
-          )}
+          {/* Content */}
         </div>
         
         {/* Board content */}

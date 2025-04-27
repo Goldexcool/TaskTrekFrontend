@@ -4,7 +4,14 @@ import api from '../lib/axios';
 import axios from 'axios';
 import useAuthStore from '@/app/store/useAuthStore';
 
-// Define interfaces based on your API response structure
+const getAccessToken = (): string => {
+  const { accessToken } = useAuthStore.getState();
+  if (!accessToken) {
+    throw new Error('Authentication required');
+  }
+  return accessToken;
+};
+
 export interface Column {
   _id: string;
   title?: string;
@@ -21,13 +28,22 @@ export interface Column {
 export interface Task {
   _id: string;
   title: string;
+  completed?: boolean;
+  isCompleted?: boolean;
   description?: string;
   column: string;
   position: number;
   priority?: 'low' | 'medium' | 'high' | 'critical';
   dueDate?: string;
   status?: 'pending' | 'in-progress' | 'completed' | 'blocked';
-  assignedTo?: string;
+  assignedTo?: string | {
+    _id: string;
+    name?: string;
+    username?: string;
+    email?: string;
+    avatar?: string;
+  } | null;
+  assignedAt?: string;
   labels?: string[];
   comments?: Array<{
     id: string;
@@ -152,43 +168,42 @@ export async function deleteColumn(columnId: string): Promise<void> {
 }
 
 // Create a new task
-export async function createTask(taskData: {
-  title: string;
-  columnId: string;
-  position: number;
-  description?: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
-  dueDate?: string;
-}): Promise<Task> {
+export const createTask = async (taskData: any): Promise<Task> => {
   try {
-    const { accessToken } = useAuthStore.getState();
-    
-    if (!accessToken) {
-      throw new Error('Authentication required');
-    }
-    
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    
+    // If we're assigning the task at creation time, convert assignedTo to userId for API consistency
+    if (taskData.assignedTo) {
+      taskData.userId = taskData.assignedTo;
+    }
     
     const response = await fetch(`${apiUrl}/tasks`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
       body: JSON.stringify(taskData)
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to create task: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Failed to create task: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data.data || data;
+    const responseData = await response.json();
+    const taskResult = responseData.data || responseData;
+    
+    // Keep a consistent assignedTo field format
+    return {
+      ...taskResult,
+      assignedTo: taskData.assignedTo || taskResult.assignedTo,
+    };
   } catch (error) {
     console.error('Error creating task:', error);
     throw error;
   }
-}
+};
 
 // Update a task
 export async function updateTask(
@@ -205,7 +220,7 @@ export async function updateTask(
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     
     const response = await fetch(`${apiUrl}/tasks/${taskId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
@@ -251,7 +266,7 @@ export async function updateBoard(
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     
     const response = await fetch(`${apiUrl}/boards/${boardId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',

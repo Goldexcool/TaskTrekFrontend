@@ -1,49 +1,71 @@
 import axios from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
-const apiClient = axios.create({
-  baseURL: '/api',
+// Log the base URL for debugging
+console.log('API base URL:', process.env.NEXT_PUBLIC_API_URL);
+
+// Create an axios instance with the base URL from environment variables
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '',
+  withCredentials: true,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
-// Add request interceptor to add auth token to all requests
-apiClient.interceptors.request.use(
+// Add request interceptor for auth token and debugging
+api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().accessToken;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Log the full URL being requested (helpful for debugging)
+    console.log(`Making request to: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    
+    // Make sure we're not in SSR context
+    if (typeof window !== 'undefined') {
+      const accessToken = useAuthStore.getState().accessToken;
+      
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
     }
+    
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Add response interceptor for token refresh
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+// Add a response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log(`Response from ${response.config.url}:`, 
+      response.status, 
+      response.data ? (typeof response.data === 'object' ? 'data received' : response.data) : 'no data'
+    );
+    return response;
+  },
+  (error) => {
+    // Enhanced error logging
+    console.error('API Error:', {
+      url: `${error.config?.baseURL || ''}${error.config?.url || ''}`,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message
+    });
     
-    // If error is 401 and request hasn't been retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    // Log possible issues with API endpoint format
+    if (error.response?.status === 404) {
+      console.error('404 Not Found - Check if endpoint path is correct:', error.config?.url);
       
-      try {
-        // Attempt to refresh the token
-        const refreshed = await useAuthStore.getState().refreshAccessToken();
-        
-        if (refreshed) {
-          // Retry the original request with new token
-          const token = useAuthStore.getState().accessToken;
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return apiClient(originalRequest);
-        }
-      } catch (refreshError) {
-        // If refresh fails, redirect to login
-        window.location.href = '/signIn';
-        return Promise.reject(refreshError);
+      // Check for common URL errors
+      if (error.config?.url?.includes('undefined')) {
+        console.error('URL contains "undefined" - Check your parameters');
+      }
+      
+      if (error.config?.url?.startsWith('http')) {
+        console.error('URL starts with http - You may be using a full URL instead of a relative path');
       }
     }
     
@@ -51,4 +73,4 @@ apiClient.interceptors.response.use(
   }
 );
 
-export default apiClient;
+export default api;

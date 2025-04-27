@@ -501,8 +501,8 @@ const TeamDetailsPage: React.FC = () => {
         title: newBoardTitle.trim(),
         description: newBoardDescription.trim(),
         teamId: team?._id,
-        backgroundColor: selectedBoardColor,
-        colorScheme: selectedColumnColor, 
+        backgroundColor: selectedBoardColor,      
+        colorScheme: selectedBackground,        
       };
       
       if (!team?._id) throw new Error("Team ID is missing");

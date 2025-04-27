@@ -184,7 +184,7 @@ export const putTeamUpdate = async (teamId: string, data: any): Promise<ApiRespo
   
   // Force PUT method and explicitly set Content-Type to prevent any ambiguity
   const response = await api({
-    method: 'PUT',
+    method: 'PATCH',
     url: `/teams/${teamId}`,
     data,
     headers: {
