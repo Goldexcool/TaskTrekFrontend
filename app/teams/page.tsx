@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Search, Plus, Users, Shield, Settings, Grid, List,
@@ -93,7 +92,7 @@ const TeamsPage: React.FC = () => {
     ensureAuthentication();
   }, [refreshAccessToken, router]);
 
-  const loadTeams = async (showRefreshing = false) => {
+  const loadTeams = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) {
       setIsRefreshing(true);
     } else {
@@ -131,11 +130,11 @@ const TeamsPage: React.FC = () => {
       setLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [refreshAccessToken]);
 
   useEffect(() => {
     loadTeams();
-  }, []);
+  }, [loadTeams]);
 
   useEffect(() => {
     // Log user information to debug ID issues

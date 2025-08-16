@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -106,7 +106,7 @@ const itemVariants = {
     y: 0,
     opacity: 1,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 260,
       damping: 20
     }
@@ -195,11 +195,7 @@ function TasksContent() {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('all');
 
-  // Fetch tasks on mount
-  useEffect(() => {
-    fetchTasks();
-    fetchTeamsAndBoards();
-  }, []);
+
 
   // Apply URL parameters to filters on initial load
   useEffect(() => {
@@ -221,7 +217,7 @@ function TasksContent() {
     }
   }, [searchParams]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -287,9 +283,9 @@ function TasksContent() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [accessToken, priorityFilter, dueDateFilter, completionFilter, selectedTeamFilter, selectedBoardFilter, assignedToMeFilter, user, toast]);
 
-  const fetchTeamsAndBoards = async () => {
+  const fetchTeamsAndBoards = useCallback(async () => {
     try {
       // Fetch teams data
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -325,7 +321,13 @@ function TasksContent() {
     } catch (error) {
       console.error('Error fetching teams/boards data:', error);
     }
-  };
+  }, [accessToken]);
+
+
+  useEffect(() => {
+    fetchTasks();
+    fetchTeamsAndBoards();
+  }, [fetchTasks, fetchTeamsAndBoards]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -1248,7 +1250,7 @@ function TasksContent() {
                                   <Edit className="h-4 w-4 mr-2" /> Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={(e) => task.id && handleToggleTaskCompletion(task.id, !!task.completed, e)}
+                                  onClick={(e: any) => task.id && handleToggleTaskCompletion(task.id, !!task.completed, e)}
                                   className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
                                 >
                                   {task.completed || task.isCompleted ? (

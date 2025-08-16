@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // First, let's create the TaskAssignmentService in a new file
 // filepath: c:\Users\DELL\Desktop\tasktrek\app\services\taskAssignmentService.ts
 
