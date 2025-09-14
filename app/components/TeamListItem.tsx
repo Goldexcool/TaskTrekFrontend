@@ -34,7 +34,7 @@ const TeamListItem: React.FC<TeamListItemProps> = ({ team, badge, isLast }) => {
   
   return (
     <Link href={`/teams/${team._id}`}>
-      <div className={`p-4 hover:bg-gray-50 transition-colors ${!isLast && 'border-b border-gray-200'}`}>
+      <div className={`p-4 hover:bg-black-50 transition-colors ${!isLast && 'border-b border-gray-200'}`}>
         <div className="flex items-center space-x-4">
           {/* Team avatar with image-based avatar or letter-based fallback */}
           <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden">

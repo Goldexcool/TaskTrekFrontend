@@ -71,7 +71,7 @@ export const SortableTask: React.FC<TaskProps> = ({ id, task, containerId }) => 
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 mb-3 cursor-grab active:cursor-grabbing ${isDragging ? 'shadow-lg' : ''}`}
+      className={`bg-white dark:bg-black-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 mb-3 cursor-grab active:cursor-grabbing ${isDragging ? 'shadow-lg' : ''}`}
     >
       <div className="p-3">
         <div className="flex justify-between items-start mb-2">
@@ -87,15 +87,15 @@ export const SortableTask: React.FC<TaskProps> = ({ id, task, containerId }) => 
             <button
               type="button"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 rounded-full hover:bg-black-100 dark:hover:bg-black-700"
             >
               <MoreVertical className="h-4 w-4" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-black-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                 <div className="py-1">
                   <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-700"
                     onClick={() => {
                       setMenuOpen(false);
                       // Handle edit task
@@ -105,13 +105,13 @@ export const SortableTask: React.FC<TaskProps> = ({ id, task, containerId }) => 
                     Edit Task
                   </button>
                   <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-700"
                   >
                     <CheckSquare className="h-4 w-4 mr-2 text-gray-500" />
                     Mark Complete
                   </button>
                   <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-black-100 dark:hover:bg-black-700"
                     onClick={() => {
                       setMenuOpen(false);
                       // Handle delete task
@@ -169,7 +169,7 @@ export const SortableTask: React.FC<TaskProps> = ({ id, task, containerId }) => 
             {task.tags.map((tag, index) => (
               <div 
                 key={index}
-                className="flex items-center text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                className="flex items-center text-xs px-2 py-0.5 rounded-full bg-black-100 dark:bg-black-700 text-gray-600 dark:text-gray-300"
               >
                 <Tag className="h-3 w-3 mr-1 text-gray-500 dark:text-gray-400" />
                 {tag}

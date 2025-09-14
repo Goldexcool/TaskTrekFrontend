@@ -1,36 +1,32 @@
 import React from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import Spotlight from './components/Spotlight';
-import IntDem from './components/intDem';
+import Features from './components/Features';
+import Pricing from './components/Pricing';
 import Testimonial from './components/Testimonial';
 import CtaSection from './components/CtaSection';
 import Footer from './components/Footer';
 
 const Page = () => {
-
   return (
-    <div className="min-h-screen bg-[#F9FAFB] font-sans overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-black font-sans">
       {/* Header/Nav */}
       <Navbar />
 
       {/* Hero Section */}
       <Hero />
 
-      {/* Trusted by section */}
-      {/* <Trusted /> */}
+      {/* Features Section */}
+      <Features />
 
-      {/* Features spotlight section */}
-      <Spotlight />
+      {/* Pricing Section */}
+      <Pricing />
 
-      {/* Interactive demo section */}
-      <IntDem />
-
-      {/* Testimonial slider section */}
+      {/* Testimonial Section */}
       <Testimonial />
 
       {/* CTA section */}
-     <CtaSection />
+      <CtaSection />
 
       {/* Footer */}
       <Footer />

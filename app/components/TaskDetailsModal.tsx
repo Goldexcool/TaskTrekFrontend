@@ -167,12 +167,12 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               onBlur={() => {
                 onUpdateTask(localTask._id, { title: localTask.title });
               }}
-              className="text-xl font-semibold w-full p-1 border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded dark:bg-gray-800 dark:text-white"
+              className="text-xl font-semibold w-full p-1 border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded dark:bg-black-800 dark:text-white"
               aria-label="Task title"
             />
             
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <div className={`px-2 py-1 rounded-md text-xs ${priorityConfig[localTask.priority as keyof typeof priorityConfig]?.color || 'bg-gray-100'}`}>
+              <div className={`px-2 py-1 rounded-md text-xs ${priorityConfig[localTask.priority as keyof typeof priorityConfig]?.color || 'bg-black-100'}`}>
                 {priorityConfig[localTask.priority as keyof typeof priorityConfig]?.icon}
                 {localTask.priority || 'medium'}
               </div>
@@ -181,7 +181,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 <div className={`flex items-center px-2 py-1 rounded-md text-xs ${
                   new Date(localTask.dueDate) < new Date() && localTask.status !== 'completed' 
                     ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                    : 'bg-black-100 text-gray-800 dark:bg-black-800 dark:text-gray-300'
                 }`}>
                   <Clock size={12} className="mr-1" />
                   {formatDate(localTask.dueDate)}
@@ -209,7 +209,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     });
                     onUpdateTask(localTask._id, { priority: newPriority });
                   }}
-                  className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                   aria-label="Task priority"
                 >
                   <option value="low">Low</option>
@@ -233,7 +233,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     });
                     onUpdateTask(localTask._id, { dueDate: newDueDate });
                   }}
-                  className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                   aria-label="Task due date"
                 />
               </div>
@@ -247,7 +247,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             
             <div className="flex items-center gap-2">
               {assignedUserDetails ? (
-                <div className="flex items-center px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center px-3 py-2 bg-black-50 dark:bg-black-800 rounded-md border border-gray-200 dark:border-gray-700">
                   <Avatar className="h-6 w-6 mr-2">
                     <AvatarImage src={assignedUserDetails.avatar} />
                     <AvatarFallback>{assignedUserDetails.name.charAt(0)}</AvatarFallback>
@@ -282,7 +282,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                         <DropdownMenuItem 
                           key={memberId}
                           onClick={() => handleAssignTask?.(localTask._id, memberId)}
-                          className={assignedUserId === memberId ? "bg-gray-100 dark:bg-gray-800" : ""}
+                          className={assignedUserId === memberId ? "bg-black-100 dark:bg-black-800" : ""}
                         >
                           <div className="flex items-center w-full">
                             <Avatar className="h-5 w-5 mr-2">
@@ -324,7 +324,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 onUpdateTask(localTask._id, { description: localTask.description });
               }}
               placeholder="Add a description..."
-              className="w-full p-2 min-h-24 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+              className="w-full p-2 min-h-24 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
               aria-label="Task description"
             />
           </div>
@@ -342,7 +342,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   });
                   onUpdateTask(localTask._id, { status: newStatus });
                 }}
-                className="p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                className="p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                 aria-label="Task status"
               >
                 <option value="pending">Pending</option>
@@ -362,7 +362,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     onUpdateTask(localTask._id, { column: newColumnId });
                   }
                 }}
-                className="p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                className="p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                 aria-label="Move task to column"
               >
                 {columns.map(col => (

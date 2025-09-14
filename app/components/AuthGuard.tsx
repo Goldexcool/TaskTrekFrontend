@@ -102,7 +102,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   // Show loading state
   if (isLoading || isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-black-100 dark:bg-black-900">
         <div className="flex flex-col items-center">
           <div className="h-16 w-16 relative">
             <div className="h-16 w-16 rounded-lg bg-indigo-600 flex items-center justify-center animate-pulse">

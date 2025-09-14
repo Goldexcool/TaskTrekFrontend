@@ -17,7 +17,7 @@ import {
   Plus, Tag, AlertCircle, Trash2, Edit,
   CheckCircle, Maximize2, Minimize2, X, Zap, Layers, MessageSquare
 } from 'lucide-react';
-import HeaderDash from '../components/HeaderDash';
+import AppLayout from '../components/AppLayout';
 import useAuthStore from '../store/useAuthStore';
 import { toast } from "../components/ui/use-toast";
 import apiClient from '../utils/apiClient';
@@ -414,7 +414,7 @@ const CalendarPage: React.FC = () => {
       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day: string) => (
         <div
           key={day}
-          className="p-2 text-sm font-medium text-gray-300 text-center border-b border-gray-700 bg-gray-800/80 backdrop-blur-sm"
+          className="p-2 text-sm font-medium text-gray-300 text-center border-b border-gray-700 bg-black-800/80 backdrop-blur-sm"
         >
           {day}
         </div>
@@ -430,8 +430,8 @@ const CalendarPage: React.FC = () => {
           <div
             key={i}
             className={`min-h-[120px] p-1.5 border border-gray-700/50 rounded-lg backdrop-blur-sm shadow-lg transition-all duration-200 ${isCurrentMonth
-              ? 'bg-gray-800/80 hover:bg-gray-800'
-              : 'bg-gray-800/40 hover:bg-gray-800/60'
+              ? 'bg-black-800/80 hover:bg-black-800'
+              : 'bg-black-800/40 hover:bg-black-800/60'
               } ${isSelectedDay ? 'ring-2 ring-indigo-500/70' : ''} ${isCurrentDay ? 'ring-1 ring-cyan-400/50' : ''
               } hover:scale-[1.02] hover:z-10`}
             onClick={() => handleDayClick(day)}
@@ -482,7 +482,7 @@ const CalendarPage: React.FC = () => {
             key={i}
             className={`p-3 text-center border-b border-gray-700 rounded-t-lg ${isToday(day)
               ? 'bg-gradient-to-b from-indigo-900/70 to-gray-800/90'
-              : 'bg-gray-800/90'
+              : 'bg-black-800/90'
               }`}
           >
             <div className="text-sm font-medium text-gray-300">
@@ -507,7 +507,7 @@ const CalendarPage: React.FC = () => {
           return (
             <div
               key={i}
-              className={`border border-gray-700/50 rounded-lg bg-gray-800/80 min-h-[250px] max-h-[500px] overflow-y-auto p-3 backdrop-blur-sm shadow-lg ${isSelectedDay ? 'ring-2 ring-indigo-500' : ''
+              className={`border border-gray-700/50 rounded-lg bg-black-800/80 min-h-[250px] max-h-[500px] overflow-y-auto p-3 backdrop-blur-sm shadow-lg ${isSelectedDay ? 'ring-2 ring-indigo-500' : ''
                 } ${isToday(day) ? 'ring-1 ring-cyan-400/50' : ''
                 }`}
               onClick={() => setSelectedDay(day)}
@@ -520,7 +520,7 @@ const CalendarPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <div className="p-3 rounded-full bg-gray-700/50">
+                  <div className="p-3 rounded-full bg-black-700/50">
                     <CheckSquare className="h-6 w-6 text-gray-400" />
                   </div>
                   <span className="text-xs mt-2">No tasks</span>
@@ -601,13 +601,13 @@ const CalendarPage: React.FC = () => {
             <h3 className="text-lg font-medium text-white flex items-center">
               <span className={`h-3 w-3 rounded-full mr-2 ${selectedTask.priority === 'high' ? 'bg-red-500' :
                 selectedTask.priority === 'medium' ? 'bg-yellow-500' :
-                  selectedTask.priority === 'low' ? 'bg-blue-500' : 'bg-gray-500'
+                  selectedTask.priority === 'low' ? 'bg-blue-500' : 'bg-black-500'
                 }`}></span>
               Task Details
             </h3>
             <button
               onClick={() => setSelectedTask(null)}
-              className="text-gray-400 hover:text-white p-1 rounded-full transition-colors bg-gray-800/40 hover:bg-gray-800/80"
+              className="text-gray-400 hover:text-white p-1 rounded-full transition-colors bg-black-800/40 hover:bg-black-800/80"
             >
               <X className="h-5 w-5" />
             </button>
@@ -624,7 +624,7 @@ const CalendarPage: React.FC = () => {
             </h2>
 
             {selectedTask.description && (
-              <p className="text-gray-300 mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+              <p className="text-gray-300 mb-6 p-4 bg-black-800/50 rounded-lg border border-gray-700/50">
                 {selectedTask.description}
               </p>
             )}
@@ -635,7 +635,7 @@ const CalendarPage: React.FC = () => {
                   <span className="w-1 h-5 bg-indigo-500 mr-2 rounded-full"></span>
                   Details
                 </h4>
-                <ul className="space-y-4 bg-gray-800/40 p-4 rounded-xl border border-gray-700/50">
+                <ul className="space-y-4 bg-black-800/40 p-4 rounded-xl border border-gray-700/50">
                   <li className="flex items-center">
                     <CalendarIcon className="h-5 w-5 text-cyan-400 mr-3" />
                     <span className="text-gray-300">
@@ -680,7 +680,7 @@ const CalendarPage: React.FC = () => {
                       Board
                     </h4>
                     <div
-                      className="p-3 rounded-xl flex items-center bg-gray-800/40 border border-gray-700/50 shadow-sm"
+                      className="p-3 rounded-xl flex items-center bg-black-800/40 border border-gray-700/50 shadow-sm"
                     >
                       <div
                         className="h-5 w-5 rounded-md mr-2 shadow-sm"
@@ -697,7 +697,7 @@ const CalendarPage: React.FC = () => {
                       <span className="w-1 h-5 bg-indigo-500 mr-2 rounded-full"></span>
                       Team
                     </h4>
-                    <div className="p-3 rounded-xl bg-gray-800/40 border border-gray-700/50 flex items-center shadow-sm">
+                    <div className="p-3 rounded-xl bg-black-800/40 border border-gray-700/50 flex items-center shadow-sm">
                       <div className="p-1.5 rounded-lg bg-indigo-900/60 mr-2">
                         <Users className="h-4 w-4 text-indigo-300" />
                       </div>
@@ -714,7 +714,7 @@ const CalendarPage: React.FC = () => {
                       <span className="w-1 h-5 bg-indigo-500 mr-2 rounded-full"></span>
                       Labels
                     </h4>
-                    <div className="flex flex-wrap gap-2 p-3 bg-gray-800/40 rounded-xl border border-gray-700/50">
+                    <div className="flex flex-wrap gap-2 p-3 bg-black-800/40 rounded-xl border border-gray-700/50">
                       {selectedTask.labels.map((label, index) => (
                         <span
                           key={index}
@@ -734,7 +734,7 @@ const CalendarPage: React.FC = () => {
                 <span className="w-1 h-5 bg-indigo-500 mr-2 rounded-full"></span>
                 Comments
               </h4>
-              <div className="bg-gray-800/40 rounded-xl border border-gray-700/50 p-4 flex items-center">
+              <div className="bg-black-800/40 rounded-xl border border-gray-700/50 p-4 flex items-center">
                 <div className="p-2 rounded-full bg-indigo-900/40 border border-indigo-800/60">
                   <MessageSquare className="h-5 w-5 text-indigo-400" />
                 </div>
@@ -750,7 +750,7 @@ const CalendarPage: React.FC = () => {
             </div> */}
           </div>
 
-          <div className="p-4 border-t border-gray-700 flex items-center justify-between bg-gray-800/50">
+          <div className="p-4 border-t border-gray-700 flex items-center justify-between bg-black-800/50">
             <div className="flex items-center">
               <span className="text-xs text-gray-500">
                 Created: {createdAt ? format(createdAt, 'PPp') : 'Unknown date'}
@@ -763,11 +763,10 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 text-white">
-      <HeaderDash />
-
-      <main className={`pt-20 px-4 pb-12 mx-auto transition-all ${isFullWidth ? 'max-w-full' : 'max-w-7xl'
-        }`}>
+    <AppLayout>
+      <div className="min-h-screen bg-black text-white">
+        <main className={`pt-4 px-4 pb-12 mx-auto transition-all ${isFullWidth ? 'max-w-full' : 'max-w-7xl'
+          }`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-4 md:space-y-0">
           <div>
             <div className="flex items-center">
@@ -780,7 +779,7 @@ const CalendarPage: React.FC = () => {
               </h1>
               <button
                 onClick={() => setIsFullWidth(!isFullWidth)}
-                className="ml-4 p-1.5 text-gray-400 hover:text-white rounded-md transition-colors bg-gray-800/70 hover:bg-gray-700/70 border border-gray-700"
+                className="ml-4 p-1.5 text-gray-400 hover:text-white rounded-md transition-colors bg-black-800/70 hover:bg-black-700/70 border border-gray-700"
                 title={isFullWidth ? 'Compact view' : 'Full width view'}
               >
                 {isFullWidth ? (
@@ -802,7 +801,7 @@ const CalendarPage: React.FC = () => {
                 onClick={() => setViewMode('month')}
                 className={`px-4 py-2 text-sm font-medium ${viewMode === 'month'
                   ? 'bg-gradient-to-r from-indigo-700 to-indigo-600 text-white'
-                  : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80'
+                  : 'bg-black-800/80 text-gray-300 hover:bg-black-700/80'
                   } transition-colors duration-200`}
               >
                 Month
@@ -812,7 +811,7 @@ const CalendarPage: React.FC = () => {
                 onClick={() => setViewMode('week')}
                 className={`px-4 py-2 text-sm font-medium border-x border-gray-700 ${viewMode === 'week'
                   ? 'bg-gradient-to-r from-indigo-700 to-indigo-600 text-white'
-                  : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80'
+                  : 'bg-black-800/80 text-gray-300 hover:bg-black-700/80'
                   } transition-colors duration-200`}
               >
                 Week
@@ -822,7 +821,7 @@ const CalendarPage: React.FC = () => {
                 onClick={() => setViewMode('day')}
                 className={`px-4 py-2 text-sm font-medium ${viewMode === 'day'
                   ? 'bg-gradient-to-r from-indigo-700 to-indigo-600 text-white'
-                  : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80'
+                  : 'bg-black-800/80 text-gray-300 hover:bg-black-700/80'
                   } transition-colors duration-200`}
               >
                 Day
@@ -833,10 +832,10 @@ const CalendarPage: React.FC = () => {
 
         <div className="bg-gradient-to-r from-gray-800/90 to-gray-900/90 rounded-xl p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 border border-gray-700/70 shadow-lg backdrop-blur-sm">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 bg-gray-800/70 p-1 rounded-lg border border-gray-700/50">
+            <div className="flex items-center space-x-2 bg-black-800/70 p-1 rounded-lg border border-gray-700/50">
               <button
                 onClick={goToPreviousPeriod}
-                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700"
+                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-black-700"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -848,13 +847,13 @@ const CalendarPage: React.FC = () => {
               </button>
               <button
                 onClick={goToNextPeriod}
-                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700"
+                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-black-700"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
 
-            <h2 className="text-lg font-medium text-white px-3 py-1.5 bg-gray-800/50 rounded-lg border border-gray-700/50 shadow-sm">
+            <h2 className="text-lg font-medium text-white px-3 py-1.5 bg-black-800/50 rounded-lg border border-gray-700/50 shadow-sm">
               {calendarTitle}
             </h2>
           </div>
@@ -863,21 +862,21 @@ const CalendarPage: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-3 py-2 text-sm bg-gray-800/70 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-700/50 shadow-sm"
+                className="flex items-center px-3 py-2 text-sm bg-black-800/70 hover:bg-black-700 text-white rounded-lg transition-colors border border-gray-700/50 shadow-sm"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
               </button>
 
               {showFilters && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-3 z-1000000000000">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-black-800 rounded-lg shadow-lg border border-gray-700 p-3 z-1000000000000">
                   <div className="space-y-3 z-10">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-1">Priority</label>
                       <select
                         value={filterPriority}
                         onChange={(e) => setFilterPriority(e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white"
+                        className="w-full bg-black-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white"
                       >
                         <option value="all">All priorities</option>
                         <option value="low">Low</option>
@@ -891,7 +890,7 @@ const CalendarPage: React.FC = () => {
                       <select
                         value={filterCompleted}
                         onChange={(e) => setFilterCompleted(e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white"
+                        className="w-full bg-black-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white"
                       >
                         <option value="all">All statuses</option>
                         <option value="pending">Pending</option>
@@ -954,7 +953,8 @@ const CalendarPage: React.FC = () => {
       <AnimatePresence>
         {selectedTask && <TaskDetailModal />}
       </AnimatePresence>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

@@ -29,7 +29,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import HeaderDash from '../components/HeaderDash';
+import AppLayout from '../components/AppLayout';
 import useAuthStore from '../store/useAuthStore';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -729,14 +729,14 @@ const NotificationsPage: React.FC = () => {
       >
         <div className="border-b border-gray-700 p-4 flex justify-between items-center">
           <div className="flex items-center">
-            <div className="mr-3 p-2 rounded-lg bg-gray-700">
+            <div className="mr-3 p-2 rounded-lg bg-black-700">
               {getNotificationIcon(notification)}
             </div>
             <h3 className="text-lg font-medium text-white">
               Notification Details
             </h3>
           </div>
-          <button onClick={() => setSelectedActivity(null)} className="p-1 hover:bg-gray-700 rounded-full">
+          <button onClick={() => setSelectedActivity(null)} className="p-1 hover:bg-black-700 rounded-full">
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -754,7 +754,7 @@ const NotificationsPage: React.FC = () => {
                 {safeFormatActivityText(notification)}
               </p>
               
-              <div className="mt-4 p-3 bg-gray-700/50 rounded-lg border border-gray-600/50">
+              <div className="mt-4 p-3 bg-black-700/50 rounded-lg border border-gray-600/50">
                 <div className="flex items-center text-sm text-gray-300">
                   <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                   {new Date(notification.timestamp || notification.createdAt).toLocaleString()}
@@ -782,7 +782,7 @@ const NotificationsPage: React.FC = () => {
                 )}
                 
                 {notification.comment && (
-                  <div className="mt-2 text-sm text-gray-300 p-2 bg-gray-800 rounded border border-gray-600">
+                  <div className="mt-2 text-sm text-gray-300 p-2 bg-black-800 rounded border border-gray-600">
                     <MessageSquare className="h-4 w-4 mr-2 text-gray-500 inline-block" />
                     <span className="italic">&quot;{notification.comment}&quot;</span>
                   </div>
@@ -811,10 +811,9 @@ const NotificationsPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950">
-      <HeaderDash />
-      
-      <main className="pt-24 pb-12 px-4 max-w-7xl mx-auto">
+    <AppLayout>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950">      
+        <main className="pt-8 pb-12 px-4 max-w-7xl mx-auto">
         {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div className="flex items-center">
@@ -830,7 +829,7 @@ const NotificationsPage: React.FC = () => {
           <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
             <button 
               onClick={handleRefresh}
-              className="flex items-center px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 text-sm font-medium transition-colors"
+              className="flex items-center px-3.5 py-2 bg-black-800 hover:bg-black-700 text-gray-300 rounded-lg border border-gray-700 text-sm font-medium transition-colors"
               disabled={refreshing}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin text-indigo-400' : 'text-gray-500'}`} />
@@ -839,7 +838,7 @@ const NotificationsPage: React.FC = () => {
             
             <button 
               onClick={markAllAsRead}
-              className="flex items-center px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 text-sm font-medium transition-colors"
+              className="flex items-center px-3.5 py-2 bg-black-800 hover:bg-black-700 text-gray-300 rounded-lg border border-gray-700 text-sm font-medium transition-colors"
               disabled={unreadCount === 0}
             >
               <CheckCircle className="h-4 w-4 mr-2 text-gray-500" />
@@ -857,7 +856,7 @@ const NotificationsPage: React.FC = () => {
                 placeholder="Search notifications..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 pl-10 pr-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full bg-black-700 border border-gray-600 rounded-lg py-2 pl-10 pr-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -869,7 +868,7 @@ const NotificationsPage: React.FC = () => {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 text-sm transition-colors"
+                className="flex items-center px-3 py-2 bg-black-800 hover:bg-black-700 text-gray-300 rounded-lg border border-gray-700 text-sm transition-colors"
               >
                 <Filter className="h-4 w-4 mr-2 text-gray-500" />
                 Filters
@@ -882,7 +881,7 @@ const NotificationsPage: React.FC = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as NotificationStatus)}
-                    className="bg-gray-700 border border-gray-600 rounded-lg py-1.5 px-3 pr-8 text-sm text-white appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="bg-black-700 border border-gray-600 rounded-lg py-1.5 px-3 pr-8 text-sm text-white appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="all">All</option>
                     <option value="unread">Unread</option>
@@ -915,7 +914,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           categoryFilter === 'all' 
                             ? 'bg-indigo-900/70 text-indigo-300 border border-indigo-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         All
@@ -925,7 +924,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           categoryFilter === 'tasks' 
                             ? 'bg-blue-900/70 text-blue-300 border border-blue-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         Tasks
@@ -935,7 +934,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           categoryFilter === 'teams' 
                             ? 'bg-purple-900/70 text-purple-300 border border-purple-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         Teams
@@ -945,7 +944,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           categoryFilter === 'boards' 
                             ? 'bg-amber-900/70 text-amber-300 border border-amber-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         Boards
@@ -955,7 +954,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           categoryFilter === 'mentions' 
                             ? 'bg-emerald-900/70 text-emerald-300 border border-emerald-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         Mentions
@@ -965,7 +964,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           categoryFilter === 'system' 
                             ? 'bg-rose-900/70 text-rose-300 border border-rose-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         System
@@ -981,7 +980,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           timeFilter === 'all' 
                             ? 'bg-indigo-900/70 text-indigo-300 border border-indigo-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         All Time
@@ -991,7 +990,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           timeFilter === 'today' 
                             ? 'bg-teal-900/70 text-teal-300 border border-teal-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         Today
@@ -1001,7 +1000,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           timeFilter === 'week' 
                             ? 'bg-cyan-900/70 text-cyan-300 border border-cyan-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         This Week
@@ -1011,7 +1010,7 @@ const NotificationsPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                           timeFilter === 'month' 
                             ? 'bg-violet-900/70 text-violet-300 border border-violet-700'
-                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                            : 'bg-black-800 text-gray-400 border border-gray-700 hover:bg-black-700'
                         }`}
                       >
                         This Month
@@ -1027,13 +1026,13 @@ const NotificationsPage: React.FC = () => {
         {/* Notifications List */}
         <div className="space-y-8">
           {loading ? (
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-16 flex flex-col items-center justify-center">
+            <div className="bg-black-800 rounded-xl border border-gray-700 p-16 flex flex-col items-center justify-center">
               <LoadingSpinner size="lg" />
               <p className="mt-4 text-gray-400">Loading notifications...</p>
             </div>
           ) : visibleNotifications.length === 0 ? (
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-16 flex flex-col items-center justify-center">
-              <div className="h-16 w-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-black-800 rounded-xl border border-gray-700 p-16 flex flex-col items-center justify-center">
+              <div className="h-16 w-16 bg-black-700 rounded-full flex items-center justify-center mb-4">
                 <Bell className="h-8 w-8 text-gray-500" />
               </div>
               <h3 className="text-xl font-medium text-white mb-2">No notifications found</h3>
@@ -1060,7 +1059,7 @@ const NotificationsPage: React.FC = () => {
           ) : (
             <>
               {/* Stats bar */}
-              <div className="bg-gray-800/60 backdrop-blur-sm px-4 py-3 rounded-lg border border-gray-700 flex items-center justify-between">
+              <div className="bg-black-800/60 backdrop-blur-sm px-4 py-3 rounded-lg border border-gray-700 flex items-center justify-between">
                 <div className="text-sm text-gray-400">
                   {statusFilter === 'all' ? (
                     <>Showing <span className="text-white font-medium">{visibleNotifications.length}</span> notifications</>
@@ -1077,7 +1076,7 @@ const NotificationsPage: React.FC = () => {
                     <span className="text-gray-400">Unread: <span className="text-white font-medium">{unreadCount}</span></span>
                   </div>
                   <div className="flex items-center">
-                    <div className="h-2 w-2 rounded-full bg-gray-500 mr-2"></div>
+                    <div className="h-2 w-2 rounded-full bg-black-500 mr-2"></div>
                     <span className="text-gray-400">Read: <span className="text-white font-medium">{notifications.length - unreadCount}</span></span>
                   </div>
                 </div>
@@ -1087,7 +1086,7 @@ const NotificationsPage: React.FC = () => {
               {Object.entries(groupNotificationsByDate(visibleNotifications)).map(([dateGroup, groupNotifications]) => (
                 <div key={dateGroup} className="space-y-2">
                   <h3 className="text-sm font-medium text-gray-400 px-2">{dateGroup}</h3>
-                  <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-700 overflow-hidden">
+                  <div className="bg-black-800/60 backdrop-blur-sm rounded-xl border border-gray-700 overflow-hidden">
                     <ul className="divide-y divide-gray-700">
                       {groupNotifications.map((notification, index) => {
                         // Check if this is the last notification to observe
@@ -1104,7 +1103,7 @@ const NotificationsPage: React.FC = () => {
                             ref={isLastElement ? lastItemRef : null}
                           >
                             <div
-                              className="p-4 flex items-start cursor-pointer hover:bg-gray-700/30 transition-colors"
+                              className="p-4 flex items-start cursor-pointer hover:bg-black-700/30 transition-colors"
                               onClick={() => {
                                 if (!notification.read) {
                                   markAsRead(notification._id);
@@ -1145,7 +1144,7 @@ const NotificationsPage: React.FC = () => {
                                 
                                 {(notification.targetName || notification.taskTitle || notification.teamName || notification.boardName) && (
                                   <div className="mt-1.5 flex items-center">
-                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
+                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-black-700 text-gray-300">
                                       {notification.taskTitle || notification.teamName || notification.boardName || notification.targetName}
                                     </span>
                                   </div>
@@ -1159,7 +1158,7 @@ const NotificationsPage: React.FC = () => {
                                       e.stopPropagation();
                                       markAsRead(notification._id);
                                     }}
-                                    className="p-1.5 text-gray-400 hover:text-white rounded-full hover:bg-gray-700 transition-colors"
+                                    className="p-1.5 text-gray-400 hover:text-white rounded-full hover:bg-black-700 transition-colors"
                                   >
                                     {notification.read ? (
                                       <Eye className="h-4 w-4" />
@@ -1193,7 +1192,8 @@ const NotificationsPage: React.FC = () => {
       <AnimatePresence>
         {selectedActivity && <NotificationDetail notification={selectedActivity} />}
       </AnimatePresence>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

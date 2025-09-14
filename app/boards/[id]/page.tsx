@@ -332,7 +332,7 @@ const UserAvatarSelectionMenu: React.FC<{
             key={member._id || member.user._id}
             className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${(currentUserId === member._id || currentUserId === member.user?._id)
                 ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                : 'hover:bg-black-100 dark:hover:bg-black-800 text-gray-700 dark:text-gray-300'
               }`}
             onClick={() => onSelectUser(member._id || member.user._id)}
           >
@@ -392,7 +392,7 @@ const TaskPriorityMenu: React.FC<{
               key={priority.value}
               className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${currentPriority === priority.value
                   ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  : 'hover:bg-black-100 dark:hover:bg-black-800 text-gray-700 dark:text-gray-300'
                 }`}
               onClick={() => onSelectPriority(priority.value)}
             >
@@ -424,7 +424,7 @@ const ColumnSelectionMenu: React.FC<{
             key={column._id}
             className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm ${currentColumnId === column._id
                 ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                : 'hover:bg-black-100 dark:hover:bg-black-800 text-gray-700 dark:text-gray-300'
               }`}
             onClick={() => onSelectColumn(column._id)}
           >
@@ -1869,9 +1869,9 @@ const BoardPage: React.FC = () => {
 
       return (
         <div
-          className={`group bg-white dark:bg-gray-800/90 rounded-lg shadow-sm border transition-all duration-200
+          className={`group bg-white dark:bg-black-800/90 rounded-lg shadow-sm border transition-all duration-200
           ${isCompleted ?
-              'opacity-75 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' :
+              'opacity-75 border-gray-200 dark:border-gray-700 bg-black-50 dark:bg-black-800/50' :
               `${priority.border} ${priority.glow}`}
           ${isOverdue ? 'border-red-300 dark:border-red-700 shadow-red-500/20' : ''}
           hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 dark:focus-within:ring-indigo-700
@@ -1886,7 +1886,7 @@ const BoardPage: React.FC = () => {
                 onChange={(e) => {
                   onStatusToggle(e.target.checked);
                 }}
-                className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600 dark:border-gray-600"
+                className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-black-700 dark:checked:bg-indigo-600 dark:border-gray-600"
                 onClick={(e) => e.stopPropagation()}
               />
 
@@ -1898,7 +1898,7 @@ const BoardPage: React.FC = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="p-0.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  className="p-0.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-black-100 dark:hover:bg-black-700 text-gray-500 dark:text-gray-400"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal size={14} />
@@ -1923,7 +1923,7 @@ const BoardPage: React.FC = () => {
                 {/* Priority submenu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-800 rounded-sm">
                       <Flag size={14} className="mr-2" /> Change Priority
                       <ChevronRight size={14} className="ml-auto" />
                     </button>
@@ -1975,7 +1975,7 @@ const BoardPage: React.FC = () => {
                 {/* Move to column submenu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-800 rounded-sm">
                       <MenuSquare size={14} className="mr-2" /> Move to Column
                       <ChevronRight size={14} className="ml-auto" />
                     </button>
@@ -2003,7 +2003,7 @@ const BoardPage: React.FC = () => {
                 {/* Assign to submenu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                    <button className="w-full px-2 py-1.5 text-sm text-left flex items-center text-gray-700 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-800 rounded-sm">
                       <User size={14} className="mr-2" /> Assign To
                       <ChevronRight size={14} className="ml-auto" />
                     </button>
@@ -2024,7 +2024,7 @@ const BoardPage: React.FC = () => {
                       </div>
                     </DropdownMenuItem>
 
-                    <div className="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+                    <div className="h-px bg-black-200 dark:bg-black-700 my-1"></div>
 
                     {/* Team members */}
                     {teamMembers.length > 0 ? (
@@ -2106,7 +2106,7 @@ const BoardPage: React.FC = () => {
               {/* Due date */}
               {task.dueDate && (
                 <span className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs 
-                ${isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'}`}>
+                ${isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' : 'bg-black-100 text-gray-800 dark:bg-black-800 dark:text-gray-300'}`}>
                   <Clock size={12} className="mr-1" />
                   {formatDate(task.dueDate)}
                 </span>
@@ -2132,7 +2132,7 @@ const BoardPage: React.FC = () => {
                   {task.labels.length > 2 && (
                     <span
                       key={`${task._id}-label-more`}
-                      className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                      className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs bg-black-100 text-gray-800 dark:bg-black-800 dark:text-gray-300"
                     >
                       +{task.labels.length - 2} more
                     </span>
@@ -2264,15 +2264,15 @@ const BoardPage: React.FC = () => {
 
     return (
       <div
-        className="task-column bg-gray-100 dark:bg-gray-900/50 rounded-xl overflow-hidden flex flex-col min-h-[calc(100vh-220px)] shadow-sm border border-gray-200 dark:border-gray-800"
+        className="task-column bg-black-100 dark:bg-black-900/50 rounded-xl overflow-hidden flex flex-col min-h-[calc(100vh-220px)] shadow-sm border border-gray-200 dark:border-gray-800"
         data-column-id={column._id}
       >
         {/* Column header */}
-        <div className="p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <div className="p-3 bg-white dark:bg-black-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <div className="flex items-center">
             <h3 className="font-medium text-gray-900 dark:text-white">{column.title}</h3>
             <div className="flex ml-2 gap-1">
-              <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-black-200 dark:bg-black-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
                 {totalTasks}
               </span>
 
@@ -2286,14 +2286,14 @@ const BoardPage: React.FC = () => {
           </div>
           <div className="flex items-center">
             <button
-              className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-black-100 dark:hover:bg-black-700"
               onClick={() => setActiveColumn(isActiveColumn ? null : column._id)}
             >
               <Plus size={16} />
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1 ml-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button className="p-1 ml-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-black-100 dark:hover:bg-black-700">
                   <MoreHorizontal size={16} />
                 </button>
               </DropdownMenuTrigger>
@@ -2319,13 +2319,13 @@ const BoardPage: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-3 bg-white dark:bg-black-800 border-b border-gray-200 dark:border-gray-700">
                 <form onSubmit={handleSubmit}>
                   {/* Task title input */}
                   <input
                     type="text"
                     placeholder="Enter task title..."
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white mb-2"
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white mb-2"
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
                     autoFocus
@@ -2334,7 +2334,7 @@ const BoardPage: React.FC = () => {
                   {/* Task description - Always visible */}
                   <textarea
                     placeholder="Add a description (optional)"
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white mb-2 min-h-[60px]"
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white mb-2 min-h-[60px]"
                     value={newTaskDescription}
                     onChange={(e) => setNewTaskDescription(e.target.value)}
                   />
@@ -2344,7 +2344,7 @@ const BoardPage: React.FC = () => {
                     <div>
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Priority</label>
                       <select
-                        className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                         value={newTaskPriority}
                         onChange={(e) => setNewTaskPriority(e.target.value)}
                       >
@@ -2360,7 +2360,7 @@ const BoardPage: React.FC = () => {
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Due Date</label>
                       <input
                         type="date"
-                        className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                         value={newTaskDueDate}
                         onChange={(e) => setNewTaskDueDate(e.target.value)}
                       />
@@ -2371,7 +2371,7 @@ const BoardPage: React.FC = () => {
                   <div className="mb-2">
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Assign To</label>
                     <select
-                      className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                      className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                       value={newTaskAssignee}
                       onChange={(e) => setNewTaskAssignee(e.target.value)}
                     >
@@ -2400,7 +2400,7 @@ const BoardPage: React.FC = () => {
                         setNewTaskDueDate('');
                         setNewTaskAssignee('');
                       }}
-                      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-700 rounded"
                     >
                       Cancel
                     </button>
@@ -2422,7 +2422,7 @@ const BoardPage: React.FC = () => {
         <div className="p-3 overflow-y-auto flex-1">
           {tasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 text-center p-4">
-              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-2">
+              <div className="w-12 h-12 rounded-full bg-black-100 dark:bg-black-800 flex items-center justify-center mb-2">
                 <Clipboard className="h-6 w-6 text-gray-400" />
               </div>
               <p className="mb-2">No tasks yet</p>
@@ -2566,7 +2566,7 @@ const BoardPage: React.FC = () => {
     <AppLayout>
       {/* Board Header */}
       <motion.div
-        className="bg-white dark:bg-gray-800 shadow-sm rounded-lg mb-6 p-4"
+        className="bg-white dark:bg-black-800 shadow-sm rounded-lg mb-6 p-4"
         style={{
           opacity: 1,
           backdropFilter: `blur(0px)`
@@ -2602,7 +2602,7 @@ const BoardPage: React.FC = () => {
             </button>
             <button
               onClick={() => setShowSidebar(!showSidebar)}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md flex items-center text-sm"
+              className="px-3 py-1.5 bg-black-100 hover:bg-black-200 dark:bg-black-700 dark:hover:bg-black-600 text-gray-700 dark:text-gray-300 rounded-md flex items-center text-sm"
             >
               <Info size={16} className="mr-1" /> Board Info
             </button>
@@ -2626,7 +2626,7 @@ const BoardPage: React.FC = () => {
       {/* Board Content */}
       {columns.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 max-w-md text-center">
+          <div className="bg-white dark:bg-black-800 rounded-lg shadow-sm p-8 max-w-md text-center">
             <Tag size={40} className="mx-auto mb-4 text-indigo-500" />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Get started with columns</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -2699,7 +2699,7 @@ const BoardPage: React.FC = () => {
                 name="title"
                 type="text"
                 placeholder="Column name"
-                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white mb-4"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white mb-4"
                 required
               />
               <div className="flex justify-end">
@@ -2777,7 +2777,7 @@ const BoardPage: React.FC = () => {
                   return (
                     <div
                       key={memberId || Math.random().toString()}
-                      className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-white dark:bg-black-800 border border-gray-200 dark:border-gray-700 rounded-lg"
                     >
                       <div className="flex items-center">
                         <Avatar className="h-10 w-10 rounded-full mr-3">
@@ -2824,7 +2824,7 @@ const BoardPage: React.FC = () => {
                 })
               ) : (
                 <div className="text-center py-8">
-                  <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+                  <div className="mx-auto h-12 w-12 rounded-full bg-black-100 dark:bg-black-800 flex items-center justify-center mb-3">
                     <Users className="h-6 w-6 text-gray-400" />
                   </div>
                   <p className="text-gray-500 dark:text-gray-400">No team members available</p>

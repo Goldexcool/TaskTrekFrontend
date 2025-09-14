@@ -13,7 +13,10 @@ import {
 
 // Import components
 import BoardCard from '../components/BoardCard';
-import AppLayout from '../components/AppLayout';
+import AuthGuard from '../components/AuthGuard';
+import { AppSidebar } from "../components/AppSidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { Button } from '../components/ui/button';
 import {
   Tooltip,
@@ -110,7 +113,6 @@ function BoardsContent() {
   
   // Theme settings
   const [glassmorphism, setGlassmorphism] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [showAnimation, setShowAnimation] = useState(true);
 
   // Fetch boards on component mount
@@ -376,42 +378,46 @@ function BoardsContent() {
 
   if (!accessToken && !isLoading) {
     return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400">
-            <div className="mb-4 p-4 bg-blue-100/30 dark:bg-blue-900/30 rounded-full backdrop-blur-sm">
-              <Terminal className="h-12 w-12 text-blue-500 dark:text-blue-400" />
-            </div>
-            <h2 className="text-2xl font-medium mb-3 text-blue-600 dark:text-blue-400">Authentication Required</h2>
-            <p className="mb-8 text-center max-w-md text-lg">
-              You need to be logged in to view and manage your boards
-            </p>
-            <Link href="/signIn">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Login to Continue
-              </Button>
-            </Link>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center py-16 text-white/70">
+          <div className="mb-4 p-4 bg-blue-900/30 rounded-full backdrop-blur-sm">
+            <Terminal className="h-12 w-12 text-blue-400" />
           </div>
+          <h2 className="text-2xl font-medium mb-3 text-blue-400">Authentication Required</h2>
+          <p className="mb-8 text-center max-w-md text-lg">
+            You need to be logged in to view and manage your boards
+          </p>
+          <Link href="/signIn">
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              Login to Continue
+            </Button>
+          </Link>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className={cn(
-        "min-h-screen pb-12 transition-colors duration-300",
-        glassmorphism ? "bg-gradient-to-br from-blue-50/80 via-slate-50/80 to-indigo-50/80 dark:from-gray-900/80 dark:via-slate-900/80 dark:to-blue-950/80" : 
-                       "bg-white dark:bg-gray-900"
-      )}>
-        {/* Background elements */}
-        {glassmorphism && (
-          <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
-            <div className="absolute top-12 -left-32 w-96 h-96 bg-purple-200 dark:bg-purple-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-30"></div>
-            <div className="absolute top-1/3 -right-20 w-80 h-80 bg-blue-200 dark:bg-blue-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-30"></div>
-            <div className="absolute bottom-20 left-40 w-72 h-72 bg-indigo-300 dark:bg-indigo-900/30 rounded-full mix-blend-multiply filter blur-2xl opacity-20 dark:opacity-30"></div>
-          </div>
-        )}
+    <AuthGuard>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-10">
+            <div className="flex items-center gap-2 px-1">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <h1 className="text-lg font-semibold">Boards</h1>
+            </div>
+          </header>
+          <div className="min-h-screen bg-black pb-12 transition-colors duration-300">
+            {/* Background elements */}
+            {glassmorphism && (
+              <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
+                <div className="absolute top-12 -left-32 w-96 h-96 bg-purple-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+                <div className="absolute top-1/3 -right-20 w-80 h-80 bg-blue-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+                <div className="absolute bottom-20 left-40 w-72 h-72 bg-indigo-900/30 rounded-full mix-blend-multiply filter blur-2xl opacity-30"></div>
+              </div>
+            )}
         
         <div className="container mx-auto px-4 py-6">
           {/* Page header with 3D-like depth */}
@@ -565,26 +571,35 @@ function BoardsContent() {
             transition={{ delay: 0.1 }}
             className={cn(
               "mb-6 rounded-xl",
-              glassmorphism && "bg-white/30 dark:bg-gray-800/30 border border-white/50 dark:border-gray-700/50 backdrop-blur-md shadow-sm p-4"
+              glassmorphism && "bg-black/30 dark:bg-black/30 border border-black/50 dark:border-black-700/50 backdrop-blur-md shadow-sm p-4"
             )}
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
                 <TabsList className={cn(
-                  "h-9",
-                  glassmorphism && "bg-white/40 dark:bg-gray-800/40"
+                  "h-9 bg-black/60 border border-white/20",
+                  glassmorphism && "backdrop-blur-sm"
                 )}>
-                  <TabsTrigger value="all" className="text-xs sm:text-sm">
+                  <TabsTrigger 
+                    value="all" 
+                    className="text-xs sm:text-sm data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:border-blue-500 text-white/70 hover:text-white transition-colors"
+                  >
                     All Boards
                   </TabsTrigger>
-                  <TabsTrigger value="starred" className="text-xs sm:text-sm flex items-center">
+                  <TabsTrigger 
+                    value="starred" 
+                    className="text-xs sm:text-sm flex items-center data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:border-blue-500 text-white/70 hover:text-white transition-colors"
+                  >
                     <Star className="w-3.5 h-3.5 mr-1" />
                     Starred
                     {boardsStats?.starredCount ? (
-                      <Badge className="ml-1.5 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">{boardsStats.starredCount}</Badge>
+                      <Badge className="ml-1.5 bg-blue-600 text-white text-xs">{boardsStats.starredCount}</Badge>
                     ) : null}
                   </TabsTrigger>
-                  <TabsTrigger value="recent" className="text-xs sm:text-sm">
+                  <TabsTrigger 
+                    value="recent" 
+                    className="text-xs sm:text-sm data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:border-blue-500 text-white/70 hover:text-white transition-colors"
+                  >
                     <Clock className="w-3.5 h-3.5 mr-1" />
                     Recent
                   </TabsTrigger>
@@ -724,7 +739,7 @@ function BoardsContent() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              <p className="mt-4 text-gray-500 dark:text-gray-400 animate-pulse">Loading your boards...</p>
+              <p className="mt-4 text-white/70 animate-pulse">Loading your boards...</p>
             </div>
           ) : (
             <>
@@ -751,8 +766,8 @@ function BoardsContent() {
                   </div>
                   {boards.length === 0 ? (
                     <>
-                      <h2 className="text-xl font-medium mb-2 text-gray-900 dark:text-white">Create your first board</h2>
-                      <p className="mb-8 text-gray-500 dark:text-gray-400">Get started organizing your tasks with a new board</p>
+                      <h2 className="text-xl font-medium mb-2 text-white">Create your first board</h2>
+                      <p className="mb-8 text-white/70">Get started organizing your tasks with a new board</p>
                       <Button 
                         onClick={handleCreateBoard}
                         className={cn(
@@ -767,8 +782,8 @@ function BoardsContent() {
                     </>
                   ) : (
                     <>
-                      <h2 className="text-xl font-medium mb-2 text-gray-900 dark:text-white">No matching boards</h2>
-                      <p className="text-gray-500 dark:text-gray-400">
+                      <h2 className="text-xl font-medium mb-2 text-white">No matching boards</h2>
+                      <p className="text-white/70">
                         Try adjusting your search or filters to find what you&apos;re looking for
                       </p>
                     </>
@@ -908,8 +923,10 @@ function BoardsContent() {
             </>
           )}
         </div>
-      </div>
-    </AppLayout>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+    </AuthGuard>
   );
 }
 

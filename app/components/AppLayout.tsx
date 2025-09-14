@@ -1,82 +1,84 @@
 'use client';
 
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React from 'react';
+import { AppSidebar } from "./AppSidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { usePathname } from 'next/navigation';
-import Sidebar from './Sidebar';
-import HeaderDash from './HeaderDash';
-
-// Create a context to share sidebar state across components
-interface SidebarContextType {
-  isOpen: boolean;
-  toggle: () => void;
-  close: () => void;
-}
-
-const SidebarContext = createContext<SidebarContextType>({
-  isOpen: false,
-  toggle: () => {},
-  close: () => {},
-});
-
-export const useSidebar = () => useContext(SidebarContext);
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   
-  // Close sidebar on route change
-  useEffect(() => {
-    console.log('Route changed, closing sidebar');
-    setSidebarOpen(false);
-  }, [pathname]);
+  // Generate breadcrumbs from pathname
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const breadcrumbs = pathSegments.map((segment, index) => {
+    const href = '/' + pathSegments.slice(0, index + 1).join('/');
+    const label = segment.charAt(0).toUpperCase() + segment.slice(1);
+    return { href, label };
+  });
 
-  // Toggle sidebar function with debug log
-  const toggleSidebar = () => {
-    console.log('Toggle sidebar called, current state:', sidebarOpen);
-    setSidebarOpen(prevState => !prevState);
-  };
+  // Check if we're on the dashboard page
+  const isDashboard = pathname === '/dashboard';
 
-  // Close sidebar function
-  const closeSidebar = () => {
-    console.log('Close sidebar called');
-    setSidebarOpen(false);
-  };
-  
-  // Log when sidebar state changes
-  useEffect(() => {
-    console.log('Sidebar state changed:', sidebarOpen);
-  }, [sidebarOpen]);
-  
   return (
-    <SidebarContext.Provider value={{ isOpen: sidebarOpen, toggle: toggleSidebar, close: closeSidebar }}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Mobile sidebar overlay */}
-        {sidebarOpen && (
-          <div 
-            className="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden"
-            onClick={closeSidebar}
-            aria-hidden="true"
-          />
-        )}
-        
-        {/* Mobile sidebar */}
-        <div id="app-sidebar" className="md:hidden">
-          <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-        </div>
-        
-        {/* Main header */}
-        <HeaderDash onMenuClick={toggleSidebar} />
-        
-        {/* Main content */}
-        <main className="pt-16 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-10">
+          <div className="flex items-center gap-2 px-1">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            {!isDashboard && (
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  {breadcrumbs.length > 0 && (
+                    <>
+                      <BreadcrumbSeparator className="hidden md:block" />
+                      {breadcrumbs.map((crumb, index) => (
+                        <React.Fragment key={crumb.href}>
+                          {index === breadcrumbs.length - 1 ? (
+                            <BreadcrumbItem>
+                              <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                            </BreadcrumbItem>
+                          ) : (
+                            <BreadcrumbItem className="hidden md:block">
+                              <BreadcrumbLink href={crumb.href}>
+                                {crumb.label}
+                              </BreadcrumbLink>
+                            </BreadcrumbItem>
+                          )}
+                          {index < breadcrumbs.length - 1 && (
+                            <BreadcrumbSeparator className="hidden md:block" />
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
+            )}
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-2 p-1 pt-0">
           {children}
-        </main>
-      </div>
-    </SidebarContext.Provider>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };
 

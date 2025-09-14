@@ -117,7 +117,7 @@ const TaskAssignment: React.FC<TaskAssignmentProps> = ({
     <div className="py-1">
       {/* Current assignee (if any) */}
       {hasAssignedUser && assignedUser && (
-        <div className="px-3 py-2 mb-2 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <div className="px-3 py-2 mb-2 bg-black-50 dark:bg-black-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <div className="flex items-center">
             <Avatar className="h-6 w-6 mr-2">
               {assignedUser.avatar || assignedUser.user?.avatar ? (
@@ -171,7 +171,7 @@ const TaskAssignment: React.FC<TaskAssignmentProps> = ({
                   className={`w-full flex items-center px-3 py-1.5 text-sm rounded-sm ${
                     isCurrentlyAssigned 
                       ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                      : 'hover:bg-black-100 dark:hover:bg-black-800 text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   <Avatar className="h-5 w-5 mr-2">
@@ -192,7 +192,7 @@ const TaskAssignment: React.FC<TaskAssignmentProps> = ({
 
       {/* Debug info for development */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="mt-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs">
+        <div className="mt-2 px-3 py-2 bg-black-50 dark:bg-black-800 text-xs">
           <div>Task ID: {task._id}</div>
           <div>AssignedTo: {assignedUserId || 'null'}</div>
         </div>

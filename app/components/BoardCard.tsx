@@ -74,38 +74,47 @@ const BoardCard: React.FC<BoardCardProps> = ({
   const isDeleting = deletingId === board._id;
 
   return (
-    <div className={`group relative overflow-hidden rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow h-full ${isDeleting ? 'opacity-50' : ''}`}>
+    <div className={`group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-black/60 transition-all duration-300 h-full ${isDeleting ? 'opacity-50' : ''}`}>
       {/* Make sure we have a valid board ID before creating the link */}
       <Link href={board._id ? `/boards/${board._id}` : '#'} className="block h-full">
         {/* Board header with background color */}
         <div 
-          className={`h-32 relative overflow-hidden ${bgStyle.className || ''}`}
+          className={`h-24 relative overflow-hidden ${bgStyle.className || ''}`}
           style={bgStyle.style || {}}
         >
-          {/* Content */}
+          {/* Gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+          
+          {/* Star indicator if starred */}
+          {board.isStarred && (
+            <div className="absolute top-3 left-3">
+              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+            </div>
+          )}
         </div>
         
         {/* Board content */}
-        <div className="p-4 bg-white dark:bg-gray-800 flex flex-col h-[calc(100%-8rem)]">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+        <div className="p-4 flex flex-col h-[calc(100%-6rem)]">
+          <h3 className="font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors line-clamp-1">
             {board.title || board.name || 'Untitled Board'}
           </h3>
           
           {board.description && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 flex-grow">
+            <p className="text-sm text-white/60 line-clamp-2 mb-4 flex-grow">
               {board.description}
             </p>
           )}
           
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
-            <div className="flex items-center">
-              <LucideClock className="h-3 w-3 mr-1" />
-              <span>{formatDate(board.updatedAt)}</span>
+          {/* Stats row */}
+          <div className="flex items-center justify-between text-xs text-white/50 mt-auto pt-3 border-t border-white/10">
+            <div className="flex items-center space-x-1">
+              <Clipboard className="h-3 w-3" />
+              <span>{getTaskCount(board)} tasks</span>
             </div>
             
-            <div className="flex items-center">
-              <Clipboard className="h-3 w-3 mr-1" />
-              <span>{getTaskCount(board)} tasks</span>
+            <div className="flex items-center space-x-1">
+              <LucideClock className="h-3 w-3" />
+              <span>{formatDate(board.updatedAt)}</span>
             </div>
           </div>
         </div>
@@ -120,10 +129,10 @@ const BoardCard: React.FC<BoardCardProps> = ({
             if (onDelete) onDelete(board._id);
           }}
           disabled={isDeleting}
-          className="absolute top-3 right-3 bg-red-500/80 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-3 right-3 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm"
           aria-label="Delete board"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </button>

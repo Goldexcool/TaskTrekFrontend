@@ -14,7 +14,7 @@ import {
 import useAuthStore from '../store/useAuthStore';
 import { fetchTeams, Team, deleteTeam } from '../store/teamService';
 import useActivityStore from '../store/activityStore';
-import { useSidebar } from './AppLayout';
+import { useSidebar } from '@/components/ui/sidebar';
 
 type NavItem = {
   name: string;
@@ -182,15 +182,15 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
 
   const handleMenuClick = () => {
     console.log("Menu button clicked");
-    if (sidebar && sidebar.toggle) {
-      sidebar.toggle();
+    if (sidebar && sidebar.toggleSidebar) {
+      sidebar.toggleSidebar();
     } else if (onMenuClick) {
       onMenuClick();
     }
   };
 
   return (
-    <header className={`fixed top-0 right-0 left-0 z-30 bg-gray-800 ${
+    <header className={`fixed top-0 right-0 left-0 z-30 bg-black-800 ${
       scrolled ? 'shadow-md shadow-black/20' : 'shadow-sm shadow-black/10'
     } transition-all duration-200`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -200,7 +200,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
               <button
                 id="mobile-menu-button"
                 type="button"
-                className="md:hidden inline-flex items-center justify-center p-2 mr-2 rounded-xl text-gray-400 hover:text-[#6366F1] hover:bg-gray-700 focus:outline-none transition-colors"
+                className="md:hidden inline-flex items-center justify-center p-2 mr-2 rounded-xl text-gray-400 hover:text-[#6366F1] hover:bg-black-700 focus:outline-none transition-colors"
                 onClick={handleMenuClick}
               >
                 <span className="sr-only">Open menu</span>
@@ -224,8 +224,8 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                     href={item.path}
                     className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-gray-700 text-[#6366F1]'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-[#6366F1]'
+                        ? 'bg-black-700 text-[#6366F1]'
+                        : 'text-gray-300 hover:bg-black-700 hover:text-[#6366F1]'
                     } flex items-center`}
                   >
                     <item.icon className={`h-4 w-4 mr-1.5 ${isActive ? 'text-[#6366F1]' : 'text-gray-400'}`} />
@@ -240,7 +240,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
             <div className="relative hidden md:block" ref={teamsMenuRef}>
               <button
                 type="button"
-                className="flex items-center px-3 py-1.5 text-sm rounded-xl text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6366F1] transition-colors"
+                className="flex items-center px-3 py-1.5 text-sm rounded-xl text-gray-300 hover:bg-black-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6366F1] transition-colors"
                 onClick={() => setTeamsMenuOpen(!teamsMenuOpen)}
               >
                 <Users className="h-4 w-4 mr-2" />
@@ -249,11 +249,11 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
               </button>
 
               {teamsMenuOpen && (
-                <div className="origin-top-right absolute right-0 mt-2 w-72 rounded-xl shadow-lg bg-gray-700 ring-1 ring-black ring-opacity-5 divide-y divide-gray-600 z-50">
+                <div className="origin-top-right absolute right-0 mt-2 w-72 rounded-xl shadow-lg bg-black-700 ring-1 ring-black ring-opacity-5 divide-y divide-gray-600 z-50">
                   <div className="px-4 py-3 border-b border-gray-600">
                     <h3 className="text-sm font-medium text-white flex items-center justify-between">
                       Your Teams 
-                      <span className="bg-gray-600 text-xs text-gray-300 px-2 py-0.5 rounded-full">
+                      <span className="bg-black-600 text-xs text-gray-300 px-2 py-0.5 rounded-full">
                         {userOwnedTeams.length}
                       </span>
                     </h3>
@@ -281,13 +281,13 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                             <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Link
                                 href={`/teams/${team._id}/edit`}
-                                className="p-1 text-gray-400 hover:text-white rounded-full hover:bg-gray-600"
+                                className="p-1 text-gray-400 hover:text-white rounded-full hover:bg-black-600"
                               >
                                 <Edit className="h-3.5 w-3.5" />
                               </Link>
                               <button
                                 onClick={() => handleDeleteTeam(team._id)}
-                                className="p-1 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-600"
+                                className="p-1 text-gray-400 hover:text-red-400 rounded-full hover:bg-black-600"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -303,7 +303,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                   <div className="py-1 border-t border-gray-600">
                     <Link 
                       href="/teams/create"
-                      className="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 transition-colors"
+                      className="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-black-600 transition-colors"
                       onClick={() => setTeamsMenuOpen(false)}
                     >
                       <Plus className="mr-3 h-4 w-4 text-gray-400" />
@@ -311,7 +311,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                     </Link>
                     <Link 
                       href="/teams"
-                      className="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 transition-colors"
+                      className="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-black-600 transition-colors"
                       onClick={() => setTeamsMenuOpen(false)}
                     >
                       <Users className="mr-3 h-4 w-4 text-gray-400" />
@@ -340,7 +340,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                     <input
                       autoFocus
                       id="search"
-                      className="block w-full bg-gray-700 py-2 pl-10 pr-3 border border-gray-600 rounded-xl leading-5 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] sm:text-sm"
+                      className="block w-full bg-black-700 py-2 pl-10 pr-3 border border-gray-600 rounded-xl leading-5 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] sm:text-sm"
                       placeholder="Search..."
                       type="search"
                       onBlur={() => setSearchOpen(false)}
@@ -351,7 +351,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}
-                  className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none transition-colors"
+                  className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-black-700 focus:outline-none transition-colors"
                 >
                   <span className="sr-only">Search</span>
                   <Search className="h-5 w-5" aria-hidden="true" />
@@ -361,7 +361,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
 
             <Link
               href="/notifications"
-              className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none relative transition-colors"
+              className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-black-700 focus:outline-none relative transition-colors"
             >
               <span className="sr-only">View notifications</span>
               <Bell className="h-5 w-5" aria-hidden="true" />
@@ -387,7 +387,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
               </button>
 
               {profileOpen && (
-                <div className="origin-top-right absolute right-0 mt-2 w-64 rounded-xl shadow-lg bg-gray-700 ring-1 ring-black ring-opacity-5 divide-y divide-gray-600 z-50">
+                <div className="origin-top-right absolute right-0 mt-2 w-64 rounded-xl shadow-lg bg-black-700 ring-1 ring-black ring-opacity-5 divide-y divide-gray-600 z-50">
                   <div className="px-4 py-3">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
@@ -408,7 +408,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                   <div className="py-1">
                     <Link 
                       href="/profile"
-                      className="group flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 transition-colors"
+                      className="group flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-black-600 transition-colors"
                       onClick={() => setProfileOpen(false)}
                     >
                       <User className="mr-3 h-5 w-5 text-gray-400 group-hover:text-[#6366F1]" />
@@ -417,7 +417,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                     
                     <Link 
                       href="/help"
-                      className="group flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 transition-colors"
+                      className="group flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-black-600 transition-colors"
                       onClick={() => setProfileOpen(false)}
                     >
                       <HelpCircle className="mr-3 h-5 w-5 text-gray-400 group-hover:text-[#6366F1]" />
@@ -426,7 +426,7 @@ const HeaderDash: React.FC<HeaderDashProps> = ({ onMenuClick }) => {
                   </div>
                   <div className="py-1">
                     <button
-                      className="group flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 transition-colors"
+                      className="group flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-black-600 transition-colors"
                       onClick={handleLogout}
                     >
                       <LogOut className="mr-3 h-5 w-5 text-gray-400 group-hover:text-[#EF4444]" />

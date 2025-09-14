@@ -33,7 +33,7 @@ const TaskColorPicker = ({ taskId, onClose }: { taskId: string, onClose: () => v
   const currentColor = getCardColor(taskId);
 
   return (
-    <div className="absolute z-50 mt-1 right-0 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 min-w-[150px]">
+    <div className="absolute z-50 mt-1 right-0 bg-white dark:bg-black-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 min-w-[150px]">
       <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 px-2">Card Color</h4>
       <div className="grid grid-cols-3 gap-1">
         {CARD_COLORS.map((colorOption) => (
@@ -178,17 +178,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   return (
     <div
-      className={`group bg-white dark:bg-gray-800/90 rounded-lg shadow-sm border transition-all duration-200
+      className={`group bg-white dark:bg-black-800/90 rounded-lg shadow-sm border transition-all duration-200
         ${isCompleted ?
-          'opacity-75 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' :
+          'opacity-75 border-gray-200 dark:border-gray-700 bg-black-50 dark:bg-black-800/50' :
           `${priority.border} ${priority.glow}`}
         ${isOverdue ? 'border-red-300 dark:border-red-700 shadow-red-500/20' : ''}
         hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 dark:focus-within:ring-indigo-700
         backdrop-blur-sm`}
     >
       {/* Drag handle at the top of the card */}
-      <div className="drag-handle flex justify-center items-center h-1.5 cursor-grab active:cursor-grabbing mb-1 rounded-t-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
-        <div className="w-8 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+      <div className="drag-handle flex justify-center items-center h-1.5 cursor-grab active:cursor-grabbing mb-1 rounded-t-lg bg-black-100 dark:bg-black-700 hover:bg-black-200 dark:hover:bg-black-600">
+        <div className="w-8 h-1 bg-black-300 dark:bg-black-600 rounded-full"></div>
       </div>
 
       {/* Card header with priority indicator */}
@@ -200,7 +200,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             onChange={(e) => {
               onStatusToggle(!isCompleted); 
             }}
-            className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600 dark:border-gray-600"
+            className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-black-700 dark:checked:bg-indigo-600 dark:border-gray-600"
             onClick={(e) => e.stopPropagation()}
           />
 
@@ -235,7 +235,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           {/* Due date */}
           {formattedDueDate && (
             <span className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs 
-              ${isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'}`}
+              ${isOverdue ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' : 'bg-black-100 text-gray-800 dark:bg-black-800 dark:text-gray-300'}`}
             >
               <Clock size={12} className="mr-1" />
               {formattedDueDate}

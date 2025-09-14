@@ -13,6 +13,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import useAuthStore from '../../store/useAuthStore';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import AppLayout from '../../components/AppLayout';
 import {
   createTeam,
   fetchTeamById,
@@ -396,7 +397,7 @@ function CreateTeamForm() {
   if (loadError) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+        <div className="bg-white dark:bg-black-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Team</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{loadError}</p>
@@ -409,7 +410,7 @@ function CreateTeamForm() {
             </button>
             <Link
               href="/teams"
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              className="px-4 py-2 bg-black-200 dark:bg-black-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-black-300 dark:hover:bg-black-600 transition-colors"
             >
               Back to Teams
             </Link>
@@ -420,7 +421,8 @@ function CreateTeamForm() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Breadcrumb navigation */}
       <div className="mb-8">
         <div className="flex items-center space-x-2 mb-4">
@@ -460,7 +462,7 @@ function CreateTeamForm() {
           <div className="flex items-center">
             <Link
               href={isEditMode && teamId ? `/teams/${teamId}` : "/teams"}
-              className="mr-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="mr-4 p-2 rounded-full hover:bg-black-100 dark:hover:bg-black-800 transition-colors"
               aria-label={isEditMode ? "Back to team" : "Back to teams"}
             >
               <ChevronLeft className="h-5 w-5 text-gray-500" />
@@ -504,7 +506,7 @@ function CreateTeamForm() {
 
       {/* Main form */}
       {/* The rest of the component remains unchanged */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-black-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <form onSubmit={handleSubmit} className="p-6 space-y-8" onChange={() => setFormTouched(true)}>
           {/* Team avatar section */}
           <div className="border-b border-gray-200 dark:border-gray-700 pb-8">
@@ -599,7 +601,7 @@ function CreateTeamForm() {
                     <button
                       type="button"
                       onClick={removeAvatar}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center"
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-black-100 dark:hover:bg-black-700 transition-colors flex items-center"
                     >
                       <Trash className="h-4 w-4 mr-2" />
                       Remove
@@ -639,7 +641,7 @@ function CreateTeamForm() {
                     nameError 
                       ? 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500' 
                       : 'border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500'
-                  } dark:bg-gray-700 dark:text-white`}
+                  } dark:bg-black-700 dark:text-white`}
                   required
                 />
                 {nameError && (
@@ -665,7 +667,7 @@ function CreateTeamForm() {
                   }}
                   placeholder="What does this team do? (optional)"
                   rows={4}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-black-700 dark:text-white"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Briefly describe the team&apos;s purpose, goals, or focus areas.
@@ -674,7 +676,7 @@ function CreateTeamForm() {
               
               {/* Team privacy field */}
               <div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors" 
+                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-black-50 dark:hover:bg-black-700/50 cursor-pointer transition-colors" 
                      onClick={() => setIsPrivate(!isPrivate)}>
                   <div className="flex items-start">
                     <div className={`flex h-5 items-center ${isPrivate ? 'text-indigo-600' : 'text-gray-400'}`}>
@@ -730,7 +732,7 @@ function CreateTeamForm() {
                     onChange={(e) => setMemberEmail(e.target.value)}
                     onKeyDown={handleMemberEmailKeyDown}
                     placeholder="Enter email address"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-black-700 dark:text-white"
                   />
                 </div>
                 
@@ -751,7 +753,7 @@ function CreateTeamForm() {
                     Added Members ({initialMembers.length})
                   </h4>
                   
-                  <div className="bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="bg-black-50 dark:bg-black-900/30 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                       {initialMembers.map((email) => (
                         <li key={email} className="p-3 flex items-center justify-between">
@@ -788,7 +790,7 @@ function CreateTeamForm() {
           <div className="flex items-center justify-end pt-4">
             <Link
               href={isEditMode && teamId ? `/teams/${teamId}` : "/teams"}
-              className="px-5 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg mr-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="px-5 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg mr-4 hover:bg-black-100 dark:hover:bg-black-700 transition-colors"
             >
               Cancel
             </Link>
@@ -822,6 +824,7 @@ function CreateTeamForm() {
         </ul>
       </div>
     </div>
+    </AppLayout>
   );
 }
 

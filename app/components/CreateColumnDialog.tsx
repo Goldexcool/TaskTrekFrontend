@@ -59,7 +59,7 @@ const CreateColumnDialog: React.FC<CreateColumnDialogProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
               placeholder="Enter column title"
               autoFocus
             />

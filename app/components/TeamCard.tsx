@@ -85,7 +85,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
   const memberCount = members.length;
 
   return (
-    <div className="group bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-sm hover:shadow-md transition-all">
+    <div className="group bg-black-800 rounded-xl overflow-hidden border border-gray-700 shadow-sm hover:shadow-md transition-all">
       <div 
         className={`h-24 ${getColorClass(name)} relative flex items-center justify-center`}
       >

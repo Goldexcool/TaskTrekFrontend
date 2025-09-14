@@ -135,26 +135,26 @@ function TasksLoadingFallback() {
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div className="h-8 w-48 bg-gray-700 animate-pulse rounded-md"></div>
-          <div className="h-10 w-32 bg-gray-700 animate-pulse rounded-md"></div>
+          <div className="h-8 w-48 bg-black-700 animate-pulse rounded-md"></div>
+          <div className="h-10 w-32 bg-black-700 animate-pulse rounded-md"></div>
         </div>
         <div className="mb-8 flex flex-col space-y-3">
-          <div className="h-4 w-3/4 bg-gray-700 animate-pulse rounded-md"></div>
-          <div className="h-4 w-1/2 bg-gray-700 animate-pulse rounded-md"></div>
+          <div className="h-4 w-3/4 bg-black-700 animate-pulse rounded-md"></div>
+          <div className="h-4 w-1/2 bg-black-700 animate-pulse rounded-md"></div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 flex flex-col space-y-2 animate-pulse">
-              <div className="h-8 w-16 bg-gray-700 rounded-md"></div>
-              <div className="h-4 w-24 bg-gray-700 rounded-md"></div>
+            <div key={i} className="bg-black border border-black p-4 flex flex-col space-y-2 animate-pulse">
+              <div className="h-8 w-16 bg-black-700 rounded-md"></div>
+              <div className="h-4 w-24 bg-black-700 rounded-md"></div>
             </div>
           ))}
         </div>
 
         <div className="mt-8 flex justify-center">
           <LoadingSpinner size="lg" />
-          <span className="ml-3 text-gray-400">Loading your tasks...</span>
+          <span className="ml-3 text-white/70">Loading your tasks...</span>
         </div>
       </div>
     </AppLayout>
@@ -633,7 +633,7 @@ function TasksContent() {
             <AlertCircle className="h-12 w-12 text-red-500" />
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">Failed to load tasks</h3>
-          <p className="text-gray-400 text-center mb-6 max-w-md">{error}</p>
+          <p className="text-white/70 text-center mb-6 max-w-md">{error}</p>
           <button
             onClick={fetchTasks}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
@@ -647,7 +647,8 @@ function TasksContent() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
+      <div className="min-h-screen bg-black">
+        <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <motion.div
           className="mb-8"
@@ -664,7 +665,7 @@ function TasksContent() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-3 py-2 rounded-lg border border-gray-700 bg-gray-800/50 hover:bg-gray-700/70 text-gray-300"
+                className="flex items-center px-3 py-2 rounded-lg border border-black bg-black hover:bg-black-900 text-white/70"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
@@ -678,7 +679,7 @@ function TasksContent() {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="flex items-center px-3 py-2 rounded-lg border border-gray-700 bg-gray-800/50 hover:bg-gray-700/70 text-gray-300"
+                className="flex items-center px-3 py-2 rounded-lg border border-black bg-black hover:bg-black-900 text-white/70"
               >
                 <svg className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} viewBox="0 0 24 24">
                   <path
@@ -699,7 +700,7 @@ function TasksContent() {
             </div>
           </div>
 
-          <p className="mt-2 text-gray-400">
+          <p className="mt-2 text-white/70">
             Organize, track and complete tasks across all your projects
           </p>
 
@@ -709,7 +710,7 @@ function TasksContent() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 flex flex-col items-center shadow-sm"
+              className="bg-black border border-black p-4 flex flex-col items-center shadow-sm rounded-xl"
             >
               <div className="text-3xl font-bold text-white mb-1">{taskStats.total}</div>
               <div className="text-sm text-gray-400 flex items-center">
@@ -722,7 +723,7 @@ function TasksContent() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 flex flex-col items-center shadow-sm"
+              className="bg-black border border-black p-4 flex flex-col items-center shadow-sm rounded-xl"
             >
               <div className="flex items-center mb-1">
                 <div className="text-3xl font-bold text-white">{taskStats.completionRate}</div>
@@ -738,7 +739,7 @@ function TasksContent() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 flex flex-col items-center shadow-sm"
+              className="bg-black border border-black p-4 flex flex-col items-center shadow-sm rounded-xl"
             >
               <div className="text-3xl font-bold text-green-400 mb-1">{taskStats.completed}</div>
               <div className="text-sm text-gray-400 flex items-center">
@@ -751,7 +752,7 @@ function TasksContent() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 }}
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 flex flex-col items-center shadow-sm"
+              className="bg-black border border-black p-4 flex flex-col items-center shadow-sm rounded-xl"
             >
               <div className="text-3xl font-bold text-blue-400 mb-1">{taskStats.today}</div>
               <div className="text-sm text-gray-400 flex items-center">
@@ -764,7 +765,7 @@ function TasksContent() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5 }}
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 flex flex-col items-center shadow-sm"
+              className="bg-black border border-black p-4 flex flex-col items-center shadow-sm rounded-xl"
             >
               <div className="text-3xl font-bold text-red-400 mb-1">{taskStats.overdue}</div>
               <div className="text-sm text-gray-400 flex items-center">
@@ -782,7 +783,7 @@ function TasksContent() {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-5 mb-6 w-full bg-gray-800 border border-gray-700 rounded-xl p-1">
+            <TabsList className="grid grid-cols-5 mb-6 w-full bg-black border border-black rounded-xl p-1">
               <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-indigo-600">
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 All Tasks
@@ -816,7 +817,7 @@ function TasksContent() {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-gray-800 shadow-md rounded-xl border border-gray-700 p-5 mb-6">
+              <div className="bg-black shadow-md rounded-xl border border-black p-5 mb-6">
                 <div className="flex flex-col space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -828,7 +829,7 @@ function TasksContent() {
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder="Find tasks by name or description"
-                          className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                          className="w-full pl-10 pr-4 py-2 bg-black border border-black rounded-lg text-white"
                         />
                       </div>
                     </div>
@@ -838,7 +839,7 @@ function TasksContent() {
                       <select
                         value={priorityFilter}
                         onChange={(e) => setPriorityFilter(e.target.value)}
-                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                        className="w-full p-2 bg-black border border-black rounded-lg text-white"
                       >
                         <option value="all">All Priorities</option>
                         <option value="low">Low</option>
@@ -853,7 +854,7 @@ function TasksContent() {
                       <select
                         value={dueDateFilter}
                         onChange={(e) => setDueDateFilter(e.target.value)}
-                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                        className="w-full p-2 bg-black border border-black rounded-lg text-white"
                       >
                         <option value="all">All Dates</option>
                         <option value="today">Today</option>
@@ -871,7 +872,7 @@ function TasksContent() {
                       <select
                         value={completionFilter}
                         onChange={(e) => setCompletionFilter(e.target.value)}
-                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                        className="w-full p-2 bg-black border border-black rounded-lg text-white"
                       >
                         <option value="all">All Statuses</option>
                         <option value="completed">Completed</option>
@@ -884,7 +885,7 @@ function TasksContent() {
                       <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
-                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                        className="w-full p-2 bg-black border border-black rounded-lg text-white"
                       >
                         <option value="dueDate">Due Date</option>
                         <option value="priority">Priority</option>
@@ -898,7 +899,7 @@ function TasksContent() {
                       <select
                         value={viewMode}
                         onChange={(e) => setViewMode(e.target.value as 'list' | 'kanban' | 'calendar' | 'gantt')}
-                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                        className="w-full p-2 bg-black border border-black rounded-lg text-white"
                       >
                         <option value="list">List View</option>
                         <option value="kanban">Kanban View</option>
@@ -912,7 +913,7 @@ function TasksContent() {
                         type="checkbox"
                         checked={assignedToMeFilter}
                         onChange={() => setAssignedToMeFilter(!assignedToMeFilter)}
-                        className="form-checkbox h-4 w-4 bg-gray-700 border-gray-600 rounded text-indigo-600 focus:ring-indigo-500"
+                        className="form-checkbox h-4 w-4 bg-black border-black rounded text-indigo-600 focus:ring-indigo-500"
                       />
                       <span className="text-gray-400">Only tasks assigned to me</span>
                     </label>
@@ -926,7 +927,7 @@ function TasksContent() {
                         setSortBy('dueDate');
                         setAssignedToMeFilter(false);
                       }}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg flex items-center transition-colors"
+                      className="px-4 py-2 bg-black-700 hover:bg-black-600 text-gray-300 rounded-lg flex items-center transition-colors"
                     >
                       <X className="h-4 w-4 mr-2" />
                       Reset Filters
@@ -943,7 +944,7 @@ function TasksContent() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-800 shadow-md rounded-xl border border-gray-700 p-10 text-center"
+            className="bg-black shadow-md rounded-xl border border-black p-10 text-center"
           >
             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6">
               <CheckSquare className="h-10 w-10 text-white" />
@@ -974,7 +975,7 @@ function TasksContent() {
                     setSelectedBoardFilter('');
                     setAssignedToMeFilter(false);
                   }}
-                  className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
+                  className="px-4 py-2 border border-black text-gray-300 rounded-lg hover:bg-black-900 transition-colors flex items-center"
                 >
                   <X className="h-4 w-4 mr-1.5" />
                   Clear Filters
@@ -995,14 +996,14 @@ function TasksContent() {
         {/* List view */}
         {filteredTasks.length > 0 && viewMode === 'list' && (
           <motion.div
-            className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden"
+            className="bg-black rounded-xl border border-black overflow-hidden"
             variants={containerVariants}
             initial="hidden"
             animate="show"
           >
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-700">
-                <thead className="bg-gray-800/80">
+              <table className="min-w-full divide-y divide-black-700">
+                <thead className="bg-black-800/80">
                   <tr>
                     <th scope="col" className="px-3 py-3.5 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-10">
                       Status
@@ -1027,18 +1028,18 @@ function TasksContent() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-gray-800 divide-y divide-gray-700">
+                <tbody className="bg-black-800 divide-y divide-gray-700">
                   {filteredTasks.map(task => (
                     <motion.tr
                       key={task._id}
                       variants={itemVariants}
-                      className={`hover:bg-gray-700 transition-colors ${task.completed || task.isCompleted ? 'opacity-60' : ''
+                      className={`hover:bg-black-700 transition-colors ${task.completed || task.isCompleted ? 'opacity-60' : ''
                         }`}
                     >
                       <td className="px-3 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleTaskCompletion(task._id || task.id || '', !!task.completed)}
-                          className={`p-1.5 rounded-md hover:bg-gray-700 ${task.completed || task.isCompleted
+                          className={`p-1.5 rounded-md hover:bg-black-700 ${task.completed || task.isCompleted
                               ? 'text-green-500'
                               : 'text-gray-500 hover:text-white'
                             }`}
@@ -1116,29 +1117,29 @@ function TasksContent() {
                       <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-2 rounded-md hover:bg-gray-700 text-gray-400 hover:text-white">
+                            <button className="p-2 rounded-md hover:bg-black-700 text-gray-400 hover:text-white">
                               <MoreHorizontal className="h-5 w-5" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-36 bg-gray-800 border border-gray-700">
+                          <DropdownMenuContent align="end" className="w-36 bg-black border border-black">
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedTask(task);
                                 setShowTaskDetails(true);
                               }}
-                              className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
+                              className="hover:bg-black-700 text-gray-300 hover:text-white cursor-pointer"
                             >
                               <Eye className="h-4 w-4 mr-2" /> View
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => task.board?.id && router.push(`/boards/${task.board.id}?task=${task.id}`)}
-                              className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
+                              className="hover:bg-black-700 text-gray-300 hover:text-white cursor-pointer"
                             >
                               <Edit className="h-4 w-4 mr-2" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleToggleTaskCompletion(task._id || task.id || '', !!task.completed || !!task.isCompleted)}
-                              className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
+                              className="hover:bg-black-700 text-gray-300 hover:text-white cursor-pointer"
                             >
                               {task.completed || task.isCompleted ? (
                                 <>
@@ -1179,7 +1180,7 @@ function TasksContent() {
               <motion.div
                 key={board.id}
                 variants={itemVariants}
-                className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow"
+                className="bg-black-800 rounded-xl border border-black-700 overflow-hidden shadow"
               >
                 <div className="p-4 flex justify-between items-center" style={{ backgroundColor: board.backgroundColor || '#6366F1' }}>
                   <h3 className="font-medium text-white flex items-center">
@@ -1193,20 +1194,20 @@ function TasksContent() {
                     <ArrowUpRight className="h-4 w-4" />
                   </Link>
                 </div>
-                <div className="p-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+                <div className="p-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-black-700 scrollbar-track-transparent">
                   {tasks.map(task => (
                     <motion.div
                       key={task.id}
                       variants={itemVariants}
                       className={`mb-3 p-3 rounded-lg border ${task.completed || task.isCompleted
-                          ? 'border-gray-700 bg-gray-700/30'
-                          : 'border-gray-700 bg-gray-800/80'
+                          ? 'border-black-700 bg-black-700/30'
+                          : 'border-black-700 bg-black-800/80'
                         } hover:shadow-md transition-all`}
                     >
                       <div className="flex items-start">
                         <button
                           onClick={() => handleToggleTaskCompletion(task._id || task.id || '', !!task.completed || !!task.isCompleted)}
-                          className={`p-1.5 rounded-md hover:bg-gray-700 ${task.completed || task.isCompleted
+                          className={`p-1.5 rounded-md hover:bg-black-700 ${task.completed || task.isCompleted
                               ? 'text-green-500'
                               : 'text-gray-500 hover:text-white'
                             }`}
@@ -1229,29 +1230,29 @@ function TasksContent() {
                             </h4>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="p-1 rounded-md hover:bg-gray-700 text-gray-400 hover:text-white">
+                                <button className="p-1 rounded-md hover:bg-black-700 text-gray-400 hover:text-white">
                                   <MoreHorizontal className="h-4 w-4" />
                                 </button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-36 bg-gray-800 border border-gray-700">
+                              <DropdownMenuContent align="end" className="w-36 bg-black-800 border border-black-700">
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedTask(task);
                                     setShowTaskDetails(true);
                                   }}
-                                  className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
+                                  className="hover:bg-black-700 text-gray-300 hover:text-white cursor-pointer"
                                 >
                                   <Eye className="h-4 w-4 mr-2" /> View
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => task.board?.id && router.push(`/boards/${task.board.id}?task=${task.id}`)}
-                                  className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
+                                  className="hover:bg-black-700 text-gray-300 hover:text-white cursor-pointer"
                                 >
                                   <Edit className="h-4 w-4 mr-2" /> Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={(e: any) => task.id && handleToggleTaskCompletion(task.id, !!task.completed, e)}
-                                  className="hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer"
+                                  className="hover:bg-black-700 text-gray-300 hover:text-white cursor-pointer"
                                 >
                                   {task.completed || task.isCompleted ? (
                                     <>
@@ -1335,7 +1336,7 @@ function TasksContent() {
                                 </span>
                               ))}
                               {task.labels.length > 3 && (
-                                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-gray-700 text-gray-300">
+                                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-black-700 text-gray-300">
                                   +{task.labels.length - 3}
                                 </span>
                               )}
@@ -1350,6 +1351,7 @@ function TasksContent() {
             ))}
           </motion.div>
         )}
+      </div>
       </div>
     </AppLayout>
   );

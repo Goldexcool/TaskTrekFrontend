@@ -11,7 +11,7 @@ export const CARD_COLORS = [
   { name: 'Purple', value: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
   { name: 'Pink', value: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300' },
   { name: 'Indigo', value: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300' },
-  { name: 'Gray', value: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' },
+  { name: 'Gray', value: 'bg-black-100 text-gray-800 dark:bg-black-800 dark:text-gray-300' },
 ];
 
 // Default color for new columns

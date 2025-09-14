@@ -68,14 +68,14 @@ const TaskColumn: React.FC<{
 
   return (
     <div
-      className="bg-gray-100 dark:bg-gray-900/50 rounded-xl overflow-hidden flex flex-col min-h-[calc(100vh-220px)] shadow-sm border border-gray-200 dark:border-gray-800 task-column"
+      className="bg-black-100 dark:bg-black-900/50 rounded-xl overflow-hidden flex flex-col min-h-[calc(100vh-220px)] shadow-sm border border-gray-200 dark:border-gray-800 task-column"
       data-column-id={column._id}
     >
-      <div className="p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+      <div className="p-3 bg-white dark:bg-black-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
         <div className="flex items-center">
           <h3 className="font-medium text-gray-900 dark:text-white">{column.title}</h3>
           <div className="flex ml-2 gap-1">
-            <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-black-200 dark:bg-black-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
               {totalTasks}
             </span>
             {completedTasks > 0 && (
@@ -88,14 +88,14 @@ const TaskColumn: React.FC<{
         </div>
         <div className="flex items-center">
           <button
-            className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-black-100 dark:hover:bg-black-700"
             onClick={() => setActiveColumn(isActiveColumn ? null : column._id)}
           >
             <Plus size={16} />
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="p-1 ml-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button className="p-1 ml-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-black-100 dark:hover:bg-black-700">
                 <MoreHorizontal size={16} />
               </button>
             </DropdownMenuTrigger>
@@ -120,19 +120,19 @@ const TaskColumn: React.FC<{
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-3 bg-white dark:bg-black-800 border-b border-gray-200 dark:border-gray-700">
               <form onSubmit={handleSubmit}>
                 <input
                   type="text"
                   placeholder="Enter task title..."
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white mb-2"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white mb-2"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   autoFocus
                 />
                 <textarea
                   placeholder="Add a description (optional)"
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white mb-2 min-h-[60px]"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white mb-2 min-h-[60px]"
                   value={newTaskDescription}
                   onChange={(e) => setNewTaskDescription(e.target.value)}
                 />
@@ -140,7 +140,7 @@ const TaskColumn: React.FC<{
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Priority</label>
                     <select
-                      className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                      className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                       value={newTaskPriority}
                       onChange={(e) => setNewTaskPriority(e.target.value)}
                     >
@@ -154,7 +154,7 @@ const TaskColumn: React.FC<{
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Due Date</label>
                     <input
                       type="date"
-                      className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                      className="w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-black-700 dark:text-white"
                       value={newTaskDueDate}
                       onChange={(e) => setNewTaskDueDate(e.target.value)}
                     />
@@ -170,7 +170,7 @@ const TaskColumn: React.FC<{
                       setNewTaskPriority('medium');
                       setNewTaskDueDate('');
                     }}
-                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-700 rounded"
                   >
                     Cancel
                   </button>
@@ -191,7 +191,7 @@ const TaskColumn: React.FC<{
       <div className="p-3 overflow-y-auto flex-1 board-container">
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 text-center p-4">
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-2">
+            <div className="w-12 h-12 rounded-full bg-black-100 dark:bg-black-800 flex items-center justify-center mb-2">
               <Clipboard className="h-6 w-6 text-gray-400" />
             </div>
             <p className="mb-2">No tasks yet</p>

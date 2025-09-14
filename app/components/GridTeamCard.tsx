@@ -70,7 +70,7 @@ const GridTeamCard: React.FC<GridTeamCardProps> = ({ team, badge }) => {
         </div>
         
         {/* Card footer with member count and creation date */}
-        <div className="mt-auto px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+        <div className="mt-auto px-6 py-4 bg-black-50 border-t border-gray-100 flex items-center justify-between">
           <div className="flex items-center text-sm text-gray-500">
             <Users className="h-4 w-4 mr-1.5 text-gray-400" />
             {memberCount} {memberCount === 1 ? 'member' : 'members'}

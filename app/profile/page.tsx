@@ -14,7 +14,7 @@ import {
   Globe
 } from 'lucide-react';
 
-import HeaderDash from '../components/HeaderDash';
+import AppLayout from '../components/AppLayout';
 import useAuthStore from '../store/useAuthStore';
 
 // User interface based on API response
@@ -289,15 +289,15 @@ const ProfilePage: React.FC = () => {
   const ProfileSkeleton = () => (
     <div className="animate-pulse">
       <div className="flex flex-col items-center mb-6">
-        <div className="h-36 w-36 rounded-full bg-gray-700"></div>
-        <div className="h-7 w-48 bg-gray-700 mt-4 rounded-md"></div>
-        <div className="h-5 w-32 bg-gray-700 mt-2 rounded-md"></div>
+        <div className="h-36 w-36 rounded-full bg-black-700"></div>
+        <div className="h-7 w-48 bg-black-700 mt-4 rounded-md"></div>
+        <div className="h-5 w-32 bg-black-700 mt-2 rounded-md"></div>
       </div>
       <div className="space-y-6">
-        <div className="h-32 bg-gray-700 rounded-xl"></div>
+        <div className="h-32 bg-black-700 rounded-xl"></div>
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-8 bg-gray-700 rounded-md"></div>
+            <div key={i} className="h-8 bg-black-700 rounded-md"></div>
           ))}
         </div>
       </div>
@@ -305,10 +305,9 @@ const ProfilePage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <HeaderDash />
-      
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <AppLayout>
+      <div className="min-h-screen bg-black-900 text-white">      
+        <main className="pt-8 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
@@ -376,7 +375,7 @@ const ProfilePage: React.FC = () => {
         </AnimatePresence>
         
         {/* Profile content */}
-        <div className="bg-gray-800 shadow-xl rounded-xl border border-gray-700 overflow-hidden">
+        <div className="bg-black-800 shadow-xl rounded-xl border border-gray-700 overflow-hidden">
           {/* Profile header with avatar banner */}
           <div className="relative h-48 bg-gradient-to-r from-indigo-700 to-purple-700">
             {/* Wave overlay effect */}
@@ -387,11 +386,11 @@ const ProfilePage: React.FC = () => {
             {/* Profile image */}
             <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 z-10">
               <div className="relative h-32 w-32 md:h-36 md:w-36">
-                <div className="rounded-full overflow-hidden border-4 border-gray-800 bg-gray-700 h-full w-full">
+                <div className="rounded-full overflow-hidden border-4 border-gray-800 bg-black-700 h-full w-full">
                   {isEditing ? (
                     <div 
                       onClick={handleAvatarClick}
-                      className="h-full w-full flex flex-col items-center justify-center bg-gray-700 cursor-pointer group relative"
+                      className="h-full w-full flex flex-col items-center justify-center bg-black-700 cursor-pointer group relative"
                     >
                       {uploadingAvatar ? (
                         <div className="flex flex-col items-center justify-center">
@@ -524,7 +523,7 @@ const ProfilePage: React.FC = () => {
                                   name="name"
                                   value={editForm.name}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="Your full name"
                                 />
                               </div>
@@ -539,7 +538,7 @@ const ProfilePage: React.FC = () => {
                                   name="username"
                                   value={editForm.username}
                                   disabled
-                                  className="bg-gray-700 text-gray-400 border border-gray-600 rounded-lg py-2 px-3 w-full cursor-not-allowed"
+                                  className="bg-black-700 text-gray-400 border border-gray-600 rounded-lg py-2 px-3 w-full cursor-not-allowed"
                                   placeholder="Username cannot be changed"
                                 />
                               </div>
@@ -554,7 +553,7 @@ const ProfilePage: React.FC = () => {
                                   rows={3}
                                   value={editForm.bio || ''}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="Tell us a little about yourself"
                                 />
                               </div>
@@ -569,7 +568,7 @@ const ProfilePage: React.FC = () => {
                                   name="jobTitle"
                                   value={editForm.jobTitle || ''}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="Your job title"
                                 />
                               </div>
@@ -584,7 +583,7 @@ const ProfilePage: React.FC = () => {
                                   name="location"
                                   value={editForm.location || ''}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="City, Country"
                                 />
                               </div>
@@ -605,7 +604,7 @@ const ProfilePage: React.FC = () => {
                                   name="email"
                                   value={profile?.email || ''}
                                   disabled
-                                  className="bg-gray-700 text-gray-400 border border-gray-600 rounded-lg py-2 px-3 w-full cursor-not-allowed"
+                                  className="bg-black-700 text-gray-400 border border-gray-600 rounded-lg py-2 px-3 w-full cursor-not-allowed"
                                 />
                               </div>
                               
@@ -619,7 +618,7 @@ const ProfilePage: React.FC = () => {
                                   name="website"
                                   value={editForm.website || ''}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="https://example.com"
                                 />
                               </div>
@@ -641,13 +640,13 @@ const ProfilePage: React.FC = () => {
                                   name="github"
                                   value={editForm.github || ''}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="GitHub username"
                                 />
                               </div>
                               
                               <div>
-                                <label htmlFor="twitter" className="block text-sm font-medium text-gray-300 mb-1 flex items-center">
+                                <label htmlFor="twitter" className="text-sm font-medium text-gray-300 mb-1 flex items-center">
                                   <Twitter className="h-4 w-4 mr-1 text-gray-400" />
                                   Twitter
                                 </label>
@@ -657,13 +656,13 @@ const ProfilePage: React.FC = () => {
                                   name="twitter"
                                   value={editForm.twitter || ''}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="Twitter username"
                                 />
                               </div>
                               
                               <div>
-                                <label htmlFor="linkedin" className="block text-sm font-medium text-gray-300 mb-1 flex items-center">
+                                <label htmlFor="linkedin" className="text-sm font-medium text-gray-300 mb-1 flex items-center">
                                   <Linkedin className="h-4 w-4 mr-1 text-gray-400" />
                                   LinkedIn
                                 </label>
@@ -673,7 +672,7 @@ const ProfilePage: React.FC = () => {
                                   name="linkedin"
                                   value={editForm.linkedin || ''}
                                   onChange={handleChange}
-                                  className="bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="bg-black-700 text-white border border-gray-600 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="LinkedIn username"
                                 />
                               </div>
@@ -685,7 +684,7 @@ const ProfilePage: React.FC = () => {
                             <button
                               type="button"
                               onClick={handleCancel}
-                              className="px-4 py-2 border border-gray-600 rounded-xl text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                              className="px-4 py-2 border border-gray-600 rounded-xl text-gray-300 hover:bg-black-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                             >
                               Cancel
                             </button>
@@ -726,7 +725,7 @@ const ProfilePage: React.FC = () => {
                         
                         {/* Bio */}
                         {profile?.bio && (
-                          <div className="bg-gray-700/50 rounded-xl p-4 mb-6 backdrop-blur-sm border border-gray-700">
+                          <div className="bg-black-700/50 rounded-xl p-4 mb-6 backdrop-blur-sm border border-gray-700">
                             <p className="text-gray-300 text-center">{profile.bio}</p>
                           </div>
                         )}
@@ -734,7 +733,7 @@ const ProfilePage: React.FC = () => {
                         {/* Info grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                           {/* Personal info */}
-                          <div className="bg-gray-700/30 p-5 rounded-xl border border-gray-700">
+                          <div className="bg-black-700/30 p-5 rounded-xl border border-gray-700">
                             <h3 className="text-lg font-medium text-white mb-4">Personal Information</h3>
                             <ul className="space-y-3">
                               <li className="flex items-center">
@@ -768,14 +767,14 @@ const ProfilePage: React.FC = () => {
                           </div>
                           
                           {/* Social profiles */}
-                          <div className="bg-gray-700/30 p-5 rounded-xl border border-gray-700">
+                          <div className="bg-black-700/30 p-5 rounded-xl border border-gray-700">
                             <h3 className="text-lg font-medium text-white mb-4">Social Profiles</h3>
                             {(profile?.social?.github || profile?.social?.twitter || profile?.social?.linkedin) ? (
                               <ul className="space-y-3">
                                 {profile?.social?.github && (
                                   <li>
                                     <a href={`https://github.com/${profile.social.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center group">
-                                      <div className="h-10 w-10 rounded-full bg-gray-800 flex items-center justify-center mr-3">
+                                      <div className="h-10 w-10 rounded-full bg-black-800 flex items-center justify-center mr-3">
                                         <Github className="h-5 w-5 text-gray-300 group-hover:text-white transition-colors" />
                                       </div>
                                       <div>
@@ -789,7 +788,7 @@ const ProfilePage: React.FC = () => {
                                 {profile?.social?.twitter && (
                                   <li>
                                     <a href={`https://twitter.com/${profile.social.twitter}`} target="_blank" rel="noopener noreferrer" className="flex items-center group">
-                                      <div className="h-10 w-10 rounded-full bg-gray-800 flex items-center justify-center mr-3">
+                                      <div className="h-10 w-10 rounded-full bg-black-800 flex items-center justify-center mr-3">
                                         <Twitter className="h-5 w-5 text-gray-300 group-hover:text-white transition-colors" />
                                       </div>
                                       <div>
@@ -803,7 +802,7 @@ const ProfilePage: React.FC = () => {
                                 {profile?.social?.linkedin && (
                                   <li>
                                     <a href={`https://linkedin.com/in/${profile.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center group">
-                                      <div className="h-10 w-10 rounded-full bg-gray-800 flex items-center justify-center mr-3">
+                                      <div className="h-10 w-10 rounded-full bg-black-800 flex items-center justify-center mr-3">
                                         <Linkedin className="h-5 w-5 text-gray-300 group-hover:text-white transition-colors" />
                                       </div>
                                       <div>
@@ -853,7 +852,7 @@ const ProfilePage: React.FC = () => {
                     <h3 className="text-lg font-medium text-white mb-6">Security Settings</h3>
                     
                     <div className="space-y-6">
-                      <div className="bg-gray-700/30 p-5 rounded-xl border border-gray-700">
+                      <div className="bg-black-700/30 p-5 rounded-xl border border-gray-700">
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-medium text-white flex items-center">
@@ -870,7 +869,7 @@ const ProfilePage: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="bg-gray-700/30 p-5 rounded-xl border border-gray-700">
+                      <div className="bg-black-700/30 p-5 rounded-xl border border-gray-700">
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-medium text-white flex items-center">
@@ -881,13 +880,13 @@ const ProfilePage: React.FC = () => {
                               Add an extra layer of security to your account
                             </p>
                           </div>
-                          <button className="px-4 py-2 rounded-xl border border-gray-600 text-gray-400 hover:bg-gray-700 transition-colors text-sm">
+                          <button className="px-4 py-2 rounded-xl border border-gray-600 text-gray-400 hover:bg-black-700 transition-colors text-sm">
                             Coming Soon
                           </button>
                         </div>
                       </div>
                       
-                      <div className="bg-gray-700/30 p-5 rounded-xl border border-gray-700">
+                      <div className="bg-black-700/30 p-5 rounded-xl border border-gray-700">
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-medium text-white flex items-center">
@@ -898,7 +897,7 @@ const ProfilePage: React.FC = () => {
                               Manage how we contact you
                             </p>
                           </div>
-                          <button className="px-4 py-2 rounded-xl border border-gray-600 text-gray-400 hover:bg-gray-700 transition-colors text-sm">
+                          <button className="px-4 py-2 rounded-xl border border-gray-600 text-gray-400 hover:bg-black-700 transition-colors text-sm">
                             Configure
                           </button>
                         </div>
@@ -911,7 +910,8 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

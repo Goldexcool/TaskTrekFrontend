@@ -1,25 +1,25 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  ArrowRight, Check, X, Eye, EyeOff, Loader2, 
-  AlertCircle, CheckCircle, Menu, X as XIcon
+  Eye, EyeOff, Loader2, AlertCircle, Mail, User, Lock, CheckSquare,
+  Check, X
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '../store/useAuthStore';
-
-// Type definitions
-type PasswordValidationKey = 'hasMinLength' | 'hasUpperCase' | 'hasLowerCase' | 'hasNumber' | 'hasSpecialChar' | 'passwordsMatch';
-
-interface ValidationRequirement {
-  key: PasswordValidationKey;
-  label: string;
-}
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { useTheme } from 'next-themes';
 
 const SignUpPage = () => {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   
   // Get auth actions from Zustand store
   const { register, isLoading, error, clearError } = useAuthStore();
@@ -27,7 +27,7 @@ const SignUpPage = () => {
   // Form state
   const [formData, setFormData] = useState({
     username: '',
-    name: '', // Added name field
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -36,10 +36,8 @@ const SignUpPage = () => {
   // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [step, setStep] = useState(1);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
-  const [signupSuccess, setSignupSuccess] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   
   // Password validation
   const [passwordValidation, setPasswordValidation] = useState({
@@ -51,54 +49,26 @@ const SignUpPage = () => {
     passwordsMatch: false,
   });
   
-  // Define validation requirements
-  const validationRequirements: ValidationRequirement[] = [
-    { key: 'hasMinLength', label: 'At least 8 characters' },
-    { key: 'hasUpperCase', label: 'At least one uppercase letter' },
-    { key: 'hasLowerCase', label: 'At least one lowercase letter' },
-    { key: 'hasNumber', label: 'At least one number' },
-    { key: 'hasSpecialChar', label: 'At least one special character' },
-    { key: 'passwordsMatch', label: 'Passwords match' },
-  ];
-  
-  // GSAP animations
-  const headerRef = useRef(null);
-  const formRef = useRef(null);
-
   // Handle Zustand error syncing with form errors
   useEffect(() => {
     if (error) {
-      // Determine which field the error relates to
-      if (error.includes('email')) {
-        setFormErrors({...formErrors, email: error});
-      } else if (error.includes('username')) {
-        setFormErrors({...formErrors, username: error});
-      } else if (error.includes('password')) {
-        setFormErrors({...formErrors, password: error});
-      } else if (error.includes('name')) {
-        setFormErrors({...formErrors, name: "Please add a name"});
-        // If we're on step 2 and there's a name error, go back to step 1
-        if (step === 2) {
-          setStep(1);
-        }
-      }
-      
-      // Clear the global error
+      setFormErrors({
+        general: error
+      });
       clearError();
     }
-  }, [error, clearError, formErrors, step]);
+  }, [error, clearError]);
   
-  // Validate password as user types
+  // Password validation logic
   useEffect(() => {
+    const password = formData.password;
     setPasswordValidation({
-      hasMinLength: formData.password.length >= 8,
-      hasUpperCase: /[A-Z]/.test(formData.password),
-      hasLowerCase: /[a-z]/.test(formData.password),
-      hasNumber: /\d/.test(formData.password),
-      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
-      passwordsMatch: 
-        formData.confirmPassword.length > 0 && 
-        formData.password === formData.confirmPassword,
+      hasMinLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      passwordsMatch: formData.password === formData.confirmPassword && formData.confirmPassword.length > 0,
     });
   }, [formData.password, formData.confirmPassword]);
   
@@ -119,17 +89,17 @@ const SignUpPage = () => {
     }
   };
   
-  const validateStep1 = () => {
+  const validateForm = () => {
     const errors: {[key: string]: string} = {};
-    
-    if (!formData.name.trim()) {
-      errors.name = "Full name is required";
-    }
     
     if (!formData.username.trim()) {
       errors.username = "Username is required";
     } else if (formData.username.length < 3) {
       errors.username = "Username must be at least 3 characters";
+    }
+    
+    if (!formData.name.trim()) {
+      errors.name = "Full name is required";
     }
     
     if (!formData.email.trim()) {
@@ -138,17 +108,10 @@ const SignUpPage = () => {
       errors.email = "Please enter a valid email address";
     }
     
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-  
-  const validateStep2 = () => {
-    const errors: {[key: string]: string} = {};
-    
     if (!formData.password) {
       errors.password = "Password is required";
-    } else if (!passwordValidation.hasMinLength) {
-      errors.password = "Password must be at least 8 characters";
+    } else if (!Object.values(passwordValidation).every(v => v)) {
+      errors.password = "Password does not meet all requirements";
     }
     
     if (!formData.confirmPassword) {
@@ -157,10 +120,8 @@ const SignUpPage = () => {
       errors.confirmPassword = "Passwords do not match";
     }
     
-    // Check all password requirements
-    const allRequirementsMet = Object.values(passwordValidation).every(value => value);
-    if (!allRequirementsMet && !errors.password) {
-      errors.password = "Password doesn't meet all requirements";
+    if (!acceptTerms) {
+      errors.terms = "Please accept the terms and conditions";
     }
     
     setFormErrors(errors);
@@ -170,430 +131,364 @@ const SignUpPage = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Validate based on current step
-    if (step === 1) {
-      if (validateStep1()) {
-        setStep(2);
-      }
-      return;
-    }
-    
-    // Final validation
-    if (!validateStep2()) {
+    if (!validateForm()) {
       return;
     }
     
     try {
-      // Call the register function from our auth store
-      await register(formData.username, formData.email, formData.password, formData.name);
+      await register(
+        formData.username,
+        formData.email,
+        formData.password,
+        formData.name
+      );
       
-      // Show success message
-      setSignupSuccess(true);
-      
-      // Redirect to login after delay
-      setTimeout(() => {
-        router.push('/signIn');
-      }, 2000);
+      // If registration is successful, redirect to sign in
+      router.push('/signIn?message=Registration successful! Please sign in.');
       
     } catch (error) {
       console.error("Sign up failed:", error);
-      // Form errors will be handled by the useEffect
     }
   };
   
+  const passwordRequirements = [
+    { key: 'hasMinLength', label: 'At least 8 characters', valid: passwordValidation.hasMinLength },
+    { key: 'hasUpperCase', label: 'One uppercase letter', valid: passwordValidation.hasUpperCase },
+    { key: 'hasLowerCase', label: 'One lowercase letter', valid: passwordValidation.hasLowerCase },
+    { key: 'hasNumber', label: 'One number', valid: passwordValidation.hasNumber },
+    { key: 'hasSpecialChar', label: 'One special character', valid: passwordValidation.hasSpecialChar },
+  ];
+  
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9FAFB] relative overflow-hidden">
-    
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      {/* Background decoration */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" />
+      
       {/* Header */}
-      <header ref={headerRef} className="py-4 md:py-6 px-4 md:px-8 relative z-10 border-b border-gray-200 md:border-none">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="flex items-center">
-            <span className="text-lg md:text-xl font-bold text-[#111827]">TaskTrek</span>
-          </Link>
-          
-          {/* Mobile menu button */}
-          <button 
-            className="md:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <XIcon size={24} /> : <Menu size={24} />}
-          </button>
-          
-          {/* Desktop navigation */}
-          <nav className="hidden md:block">
-            <ul className="flex space-x-8">
-              <li>
-                <Link 
-                  href="/signIn" 
-                  className="text-gray-600 hover:text-[#6366F1] transition-colors font-medium"
-                >
-                  Sign In
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/pricing" 
-                  className="text-gray-600 hover:text-[#6366F1] transition-colors font-medium"
-                >
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                {/* <Link 
-                  href="/features" 
-                  className="text-gray-600 hover:text-[#6366F1] transition-colors font-medium"
-                >
-                  Features
-                </Link> */}
-              </li>
-            </ul>
-          </nav>
-        </div>
+      <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-10">
+        <Link href="/" className="flex items-center space-x-2">
+          <CheckSquare className="h-8 w-8 text-primary" />
+          <span className="text-xl font-bold">TaskTrek</span>
+        </Link>
         
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden mt-2 border-t border-gray-200"
-            >
-              <nav className="py-3">
-                <ul className="space-y-3">
-                  <li>
-                    <Link 
-                      href="/signIn" 
-                      className="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Sign In
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      href="/pricing" 
-                      className="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Pricing
-                    </Link>
-                  </li>
-                  <li>
-                    {/* <Link 
-                      href="/features" 
-                      className="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Features
-                    </Link> */}
-                  </li>
-                </ul>
-              </nav>
-            </motion.div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+        >
+          {theme === 'light' ? (
+            <Lock className="h-4 w-4" />
+          ) : (
+            <Lock className="h-4 w-4" />
           )}
-        </AnimatePresence>
-      </header>
+        </Button>
+      </div>
       
       {/* Main content */}
-      <main className="flex-grow flex items-center justify-center px-4 py-6 md:py-12 relative z-10">
-        <div 
-          ref={formRef}
-          className="w-full max-w-md mx-auto"
-        >
-          <AnimatePresence mode="wait">
-            {signupSuccess ? (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white rounded-xl md:rounded-2xl shadow-xl border border-[#E5E7EB] p-6 md:p-8 text-center"
-              >
-                <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 md:mb-6">
-                  <CheckCircle className="w-8 h-8 md:w-10 md:h-10 text-green-500" />
-                </div>
-                <h2 className="text-xl md:text-2xl font-bold text-[#111827] mb-2">Account Created!</h2>
-                <p className="text-gray-600 mb-6">
-                  Your TaskTrek account has been successfully created. You&apos;ll be redirected to the login page shortly.
-                </p>
-                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-green-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 2 }}
-                  />
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="form"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="bg-white rounded-xl md:rounded-2xl shadow-xl border border-[#E5E7EB] overflow-hidden">
-                  <div className="p-5 md:p-8">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <h1 className="text-2xl md:text-3xl font-bold text-[#111827] mb-2">
-                        {step === 1 ? 'Create your account' : 'Set up your password'}
-                      </h1>
-                      <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
-                        {step === 1 
-                          ? 'Get started with TaskTrek and boost your productivity'
-                          : 'Create a strong password to secure your account'
-                        }
-                      </p>
-                      
-                      <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-                        <AnimatePresence mode="wait">
-                          {step === 1 ? (
-                            <motion.div
-                              key="step1"
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: 20 }}
-                              transition={{ duration: 0.3 }}
-                              className="space-y-4 md:space-y-6"
-                            >
-                              <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                                  Full Name
-                                </label>
-                                <input
-                                  type="text"
-                                  id="name"
-                                  name="name"
-                                  value={formData.name}
-                                  onChange={handleChange}
-                                  required
-                                  className={`w-full px-3 md:px-4 py-2 md:py-3 text-gray-700 rounded-lg md:rounded-xl border ${formErrors.name ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-indigo-100'} focus:border-[#6366F1] transition-colors`}
-                                  placeholder="John Doe"
-                                />
-                                {formErrors.name && (
-                                  <p className="mt-1 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-                                    {formErrors.name}
-                                  </p>
-                                )}
-                              </div>
-                            
-                              <div>
-                                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                                  Username
-                                </label>
-                                <input
-                                  type="text"
-                                  id="username"
-                                  name="username"
-                                  value={formData.username}
-                                  onChange={handleChange}
-                                  required
-                                  className={`w-full px-3 md:px-4 py-2 md:py-3 text-gray-700 rounded-lg md:rounded-xl border ${formErrors.username ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-indigo-100'} focus:border-[#6366F1] transition-colors`}
-                                  placeholder="johndoe"
-                                />
-                                {formErrors.username && (
-                                  <p className="mt-1 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-                                    {formErrors.username}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                                  Email Address
-                                </label>
-                                <input
-                                  type="email"
-                                  id="email"
-                                  name="email"
-                                  value={formData.email}
-                                  onChange={handleChange}
-                                  required
-                                  className={`w-full px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl text-gray-700 border ${formErrors.email ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-indigo-100'} focus:border-[#6366F1] transition-colors`}
-                                  placeholder="john@example.com"
-                                />
-                                {formErrors.email && (
-                                  <p className="mt-1 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-                                    {formErrors.email}
-                                  </p>
-                                )}
-                              </div>
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="step2"
-                              initial={{ opacity: 0, x: 20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -20 }}
-                              transition={{ duration: 0.3 }}
-                              className="space-y-4 md:space-y-6"
-                            >
-                              <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                                  Password
-                                </label>
-                                <div className="relative">
-                                  <input
-                                    type={showPassword ? "text" : "password"}
-                                    id="password"
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                    className={`w-full px-3 md:px-4 py-2 md:py-3 pr-10 text-gray-700 rounded-lg md:rounded-xl border ${formErrors.password ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-indigo-100'} focus:border-[#6366F1] transition-colors`}
-                                    placeholder="••••••••"
-                                  />
-                                  <button
-                                    type="button"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                  >
-                                    {showPassword ? <EyeOff size={16} className="md:h-[18px] md:w-[18px]" /> : <Eye size={16} className="md:h-[18px] md:w-[18px]" />}
-                                  </button>
-                                </div>
-                                {formErrors.password && (
-                                  <p className="mt-1 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-                                    {formErrors.password}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              <div>
-                                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                                  Confirm Password
-                                </label>
-                                <div className="relative">
-                                  <input
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    required
-                                    className={`w-full text-gray-700 px-3 md:px-4 py-2 md:py-3 pr-10 rounded-lg md:rounded-xl border ${formErrors.confirmPassword ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-indigo-100'} focus:border-[#6366F1] transition-colors`}
-                                    placeholder="••••••••"
-                                  />
-                                  <button
-                                    type="button"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                  >
-                                    {showConfirmPassword ? <EyeOff size={16} className="md:h-[18px] md:w-[18px]" /> : <Eye size={16} className="md:h-[18px] md:w-[18px]" />}
-                                  </button>
-                                </div>
-                                {formErrors.confirmPassword && (
-                                  <p className="mt-1 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-                                    {formErrors.confirmPassword}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              {/* Password requirements checklist */}
-                              <div className="bg-gray-50 p-3 md:p-4 rounded-lg md:rounded-xl">
-                                <h3 className="text-xs md:text-sm font-medium text-gray-700 mb-2">
-                                  Password requirements:
-                                </h3>
-                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-2 md:gap-y-2">
-                                  {validationRequirements.map(({ key, label }) => (
-                                    <li key={key} className="flex items-center text-xs md:text-sm">
-                                      {passwordValidation[key] ? (
-                                        <Check size={14} className="text-green-500 mr-1 md:mr-2 flex-shrink-0" />
-                                      ) : (
-                                        <X size={14} className="text-gray-400 mr-1 md:mr-2 flex-shrink-0" />
-                                      )}
-                                      <span className={passwordValidation[key] ? 'text-gray-700' : 'text-gray-500'}>
-                                        {label}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                        
-                        <div className="flex items-center justify-between pt-2">
-                          {step === 2 && (
-                            <button
-                              type="button"
-                              onClick={() => setStep(1)}
-                              className="text-gray-500 hover:text-gray-700 transition-colors flex items-center text-sm"
-                            >
-                              <ArrowRight className="h-3 w-3 md:h-4 md:w-4 mr-1 rotate-180" />
-                              Back
-                            </button>
-                          )}
-                          
-                          <motion.button
-                            type="submit"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`py-2 md:py-3 px-6 md:px-8 bg-[#6366F1] text-white text-sm md:text-base rounded-lg md:rounded-xl font-medium hover:bg-[#4F46E5] transition-colors shadow-md hover:shadow-lg flex items-center justify-center ${step === 1 ? 'ml-auto' : 'w-auto'}`}
-                            disabled={isLoading}
-                          >
-                            {isLoading ? (
-                              <Loader2 size={18} className="animate-spin mr-2" />
-                            ) : null}
-                            {step === 1 ? (
-                              <>
-                                Continue
-                                <ArrowRight size={16} className="ml-2" />
-                              </>
-                            ) : (
-                              'Create Account'
-                            )}
-                          </motion.button>
-                        </div>
-                      </form>
-                      
-                      <div className="mt-5 md:mt-6 text-center">
-                        <p className="text-sm text-gray-600">
-                          Already have an account?{' '}
-                          <Link href="/signIn" className="text-[#6366F1] font-medium hover:text-[#4F46E5] transition-colors">
-                            Sign in
-                          </Link>
-                        </p>
-                      </div>
-                    </motion.div>
-                  </div>
-                  
-                  {/* Progress indicator */}
-                  <div className="bg-gray-50 p-3 md:p-4 flex justify-between items-center border-t border-[#E5E7EB]">
-                    <div className="flex space-x-2">
-                      <div className={`h-1.5 md:h-2 w-12 md:w-16 rounded-full ${step >= 1 ? 'bg-[#6366F1]' : 'bg-gray-200'}`}></div>
-                      <div className={`h-1.5 md:h-2 w-12 md:w-16 rounded-full ${step >= 2 ? 'bg-[#6366F1]' : 'bg-gray-200'}`}></div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md mx-auto relative z-10"
+      >
+        <Card className="border-border shadow-lg">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">
+              Create your account
+            </CardTitle>
+            <CardDescription className="text-center">
+              Join TaskTrek and start managing your projects
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            {/* General error message */}
+            {formErrors.general && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{formErrors.general}</AlertDescription>
+              </Alert>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div className="text-xs md:text-sm text-gray-500">
-                      Step {step} of 2
-                    </div>
+                    <Input
+                      id="username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      placeholder="johndoe"
+                      className={`pl-10 ${formErrors.username ? 'border-destructive' : ''}`}
+                      required
+                    />
                   </div>
+                  {formErrors.username && (
+                    <p className="text-sm text-destructive flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                      {formErrors.username}
+                    </p>
+                  )}
                 </div>
                 
-               
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </main>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="John Doe"
+                    className={formErrors.name ? 'border-destructive' : ''}
+                    required
+                  />
+                  {formErrors.name && (
+                    <p className="text-sm text-destructive flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                      {formErrors.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="john@example.com"
+                    className={`pl-10 ${formErrors.email ? 'border-destructive' : ''}`}
+                    required
+                  />
+                </div>
+                {formErrors.email && (
+                  <p className="text-sm text-destructive flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                    {formErrors.email}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className={`pl-10 pr-10 ${formErrors.password ? 'border-destructive' : ''}`}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Password requirements */}
+                {formData.password && (
+                  <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium">Password requirements:</p>
+                    <div className="grid grid-cols-1 gap-1">
+                      {passwordRequirements.map((req) => (
+                        <div key={req.key} className="flex items-center text-xs">
+                          {req.valid ? (
+                            <Check className="h-3 w-3 text-green-500 mr-2" />
+                          ) : (
+                            <X className="h-3 w-3 text-muted-foreground mr-2" />
+                          )}
+                          <span className={req.valid ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}>
+                            {req.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {formErrors.password && (
+                  <p className="text-sm text-destructive flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                    {formErrors.password}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className={`pl-10 pr-10 ${formErrors.confirmPassword ? 'border-destructive' : ''}`}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                
+                {formData.confirmPassword && (
+                  <div className="flex items-center text-xs">
+                    {passwordValidation.passwordsMatch ? (
+                      <>
+                        <Check className="h-3 w-3 text-green-500 mr-2" />
+                        <span className="text-green-700 dark:text-green-400">Passwords match</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-3 w-3 text-destructive mr-2" />
+                        <span className="text-destructive">Passwords do not match</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                
+                {formErrors.confirmPassword && (
+                  <p className="text-sm text-destructive flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                    {formErrors.confirmPassword}
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                />
+                <Label htmlFor="terms" className="text-sm font-normal">
+                  I agree to the{' '}
+                  <Link href="/terms" className="text-primary hover:underline">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" className="text-primary hover:underline">
+                    Privacy Policy
+                  </Link>
+                </Label>
+              </div>
+              
+              {formErrors.terms && (
+                <p className="text-sm text-destructive flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                  {formErrors.terms}
+                </p>
+              )}
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !Object.values(passwordValidation).every(v => v)}
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Account
+              </Button>
+            </form>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <Button variant="outline" className="w-full">
+                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                Google
+              </Button>
+              <Button variant="outline" className="w-full">
+                <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                </svg>
+                Twitter
+              </Button>
+            </div>
+          </CardContent>
+          
+          <CardFooter>
+            <p className="text-center text-sm text-muted-foreground w-full">
+              Already have an account?{' '}
+              <Link href="/signIn" className="text-primary font-medium hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </motion.div>
       
-      {/* Footer - Responsive */}
-      <footer className="py-4 md:py-6 px-4 md:px-8 text-center text-xs md:text-sm text-gray-500 relative z-10 border-t border-gray-200 mt-4">
+      {/* Footer */}
+      <footer className="absolute bottom-6 left-6 right-6 text-center text-sm text-muted-foreground z-10">
         <p>© {new Date().getFullYear()} TaskTrek. All rights reserved.</p>
-        <div className="flex justify-center flex-wrap gap-4 mt-2">
-          <Link href="/privacy" className="hover:text-[#6366F1] transition-colors">Privacy Policy</Link>
-          <Link href="/terms" className="hover:text-[#6366F1] transition-colors">Terms of Service</Link>
-          <Link href="/contact" className="hover:text-[#6366F1] transition-colors">Contact</Link>
-        </div>
       </footer>
     </div>
   );

@@ -165,14 +165,14 @@ const Sidebar: React.FC<{
 
   return (
     <div 
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out ${
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-white dark:bg-black-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       } ${className}`}
     >
       {/* Mobile sidebar close button */}
       <button 
         onClick={onClose}
-        className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
+        className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 p-1.5 rounded-md hover:bg-black-100 dark:hover:bg-black-800 dark:text-gray-400 dark:hover:text-gray-300"
       >
         <X className="h-5 w-5" />
       </button>
@@ -217,8 +217,8 @@ const Sidebar: React.FC<{
                   onClick={handleLinkClick}
                   className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                     pathname === item.href || pathname?.startsWith(item.href + '/')
-                      ? 'bg-indigo-50 text-indigo-600 dark:bg-gray-800 dark:text-indigo-400'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-gray-800'
+                      ? 'bg-indigo-50 text-indigo-600 dark:bg-black-800 dark:text-indigo-400'
+                      : 'text-gray-700 hover:bg-black-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-black-800'
                   }`}
                 >
                   <item.icon
@@ -234,7 +234,7 @@ const Sidebar: React.FC<{
                     <span className={`ml-3 inline-block py-0.5 px-2 text-xs rounded-full ${
                       pathname === item.href || pathname?.startsWith(item.href + '/')
                         ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300'
-                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                        : 'bg-black-100 text-gray-700 dark:bg-black-700 dark:text-gray-300'
                     }`}>
                       {item.count}
                     </span>
@@ -253,7 +253,7 @@ const Sidebar: React.FC<{
           >
             <span>My Teams</span>
             <div className="flex items-center">
-              {loading && <div className="h-2 w-2 bg-gray-500 animate-pulse rounded-full mr-2"></div>}
+              {loading && <div className="h-2 w-2 bg-black-500 animate-pulse rounded-full mr-2"></div>}
               {teamsExpanded ? (
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -277,8 +277,8 @@ const Sidebar: React.FC<{
                     onClick={handleLinkClick}
                     className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                       pathname === `/teams/${team._id || team.id}` || pathname?.startsWith(`/teams/${team._id || team.id}/`)
-                        ? 'bg-indigo-50 text-indigo-600 dark:bg-gray-800 dark:text-indigo-400'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-gray-800'
+                        ? 'bg-indigo-50 text-indigo-600 dark:bg-black-800 dark:text-indigo-400'
+                        : 'text-gray-700 hover:bg-black-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-black-800'
                     }`}
                   >
                     <Users className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-indigo-600 dark:text-gray-400 dark:group-hover:text-indigo-400" aria-hidden="true" />
@@ -291,7 +291,7 @@ const Sidebar: React.FC<{
               <Link
                 href="/teams/create"
                 onClick={handleLinkClick}
-                className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-gray-800"
+                className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-black-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-black-800"
               >
                 <PlusCircle className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-green-600 dark:text-gray-400 dark:group-hover:text-green-400" aria-hidden="true" />
                 <span className="flex-1 text-green-600 dark:text-green-400">Add new team</span>
@@ -308,7 +308,7 @@ const Sidebar: React.FC<{
           >
             <span>My Boards</span>
             <div className="flex items-center">
-              {loadingBoards && <div className="h-2 w-2 bg-gray-500 animate-pulse rounded-full mr-2"></div>}
+              {loadingBoards && <div className="h-2 w-2 bg-black-500 animate-pulse rounded-full mr-2"></div>}
               {boardsExpanded ? (
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -332,8 +332,8 @@ const Sidebar: React.FC<{
                     onClick={handleLinkClick}
                     className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                       pathname === `/boards/${board._id}` || pathname?.startsWith(`/boards/${board._id}/`)
-                        ? 'bg-indigo-50 text-indigo-600 dark:bg-gray-800 dark:text-indigo-400'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-gray-800'
+                        ? 'bg-indigo-50 text-indigo-600 dark:bg-black-800 dark:text-indigo-400'
+                        : 'text-gray-700 hover:bg-black-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-black-800'
                     }`}
                   >
                     <Layers className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-indigo-600 dark:text-gray-400 dark:group-hover:text-indigo-400" aria-hidden="true" />
@@ -346,7 +346,7 @@ const Sidebar: React.FC<{
               <Link
                 href="/boards/create"
                 onClick={handleLinkClick}
-                className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-gray-800"
+                className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-black-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-black-800"
               >
                 <PlusCircle className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-green-600 dark:text-gray-400 dark:group-hover:text-green-400" aria-hidden="true" />
                 <span className="flex-1 text-green-600 dark:text-green-400">Add new board</span>
@@ -362,7 +362,7 @@ const Sidebar: React.FC<{
           <Link
             href="/settings"
             onClick={handleLinkClick}
-            className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-gray-800"
+            className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-black-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-black-800"
           >
             <Settings className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-indigo-600 dark:text-gray-400 dark:group-hover:text-indigo-400" aria-hidden="true" />
             <span>Settings</span>
@@ -370,7 +370,7 @@ const Sidebar: React.FC<{
           <Link
             href="/help"
             onClick={handleLinkClick}
-            className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-gray-800"
+            className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-black-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 dark:hover:bg-black-800"
           >
             <HelpCircle className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-indigo-600 dark:text-gray-400 dark:group-hover:text-indigo-400" aria-hidden="true" />
             <span>Help & Support</span>

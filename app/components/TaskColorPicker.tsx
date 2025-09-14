@@ -11,7 +11,7 @@ const TaskColorPicker: React.FC<TaskColorPickerProps> = ({ taskId, onClose }) =>
   const currentColor = getCardColor(taskId);
   
   return (
-    <div className="absolute z-50 mt-1 right-0 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 min-w-[150px]">
+    <div className="absolute z-50 mt-1 right-0 bg-white dark:bg-black-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 min-w-[150px]">
       <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 px-2">Card Color</h4>
       <div className="grid grid-cols-3 gap-1">
         {CARD_COLORS.map((colorOption) => (

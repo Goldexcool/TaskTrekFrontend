@@ -368,7 +368,7 @@ const TeamsPage: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search teams..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-700 rounded-xl shadow-sm leading-5 bg-gray-800 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] transition-colors sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-black rounded-xl shadow-sm leading-5 bg-black text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] transition-colors sm:text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -378,19 +378,19 @@ const TeamsPage: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="inline-flex items-center p-2 border border-gray-700 rounded-xl text-gray-400 bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6366F1] transition-colors"
+              className="inline-flex items-center p-2 border border-black rounded-xl text-gray-400 bg-black hover:bg-black-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6366F1] transition-colors"
             >
               <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin text-[#6366F1]' : ''}`} />
               <span className="sr-only">Refresh</span>
             </button>
             
             {/* View toggle buttons */}
-            <div className="hidden md:flex bg-gray-800 p-1 rounded-xl border border-gray-700">
+            <div className="hidden md:flex bg-black p-1 rounded-xl border border-black">
               <button
                 onClick={() => setView('grid')}
                 className={`p-2 text-sm font-medium rounded-lg flex items-center ${
                   view === 'grid' 
-                    ? 'bg-gray-700 text-white shadow-sm' 
+                    ? 'bg-black-700 text-white shadow-sm' 
                     : 'text-gray-400 hover:text-white'
                 } transition-colors`}
               >
@@ -401,7 +401,7 @@ const TeamsPage: React.FC = () => {
                 onClick={() => setView('list')}
                 className={`p-2 text-sm font-medium rounded-lg flex items-center ${
                   view === 'list' 
-                    ? 'bg-gray-700 text-white shadow-sm' 
+                    ? 'bg-black-700 text-white shadow-sm' 
                     : 'text-gray-400 hover:text-white'
                 } transition-colors`}
               >
@@ -449,7 +449,7 @@ const TeamsPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden">
+              <div className="bg-black rounded-xl shadow-sm border border-black overflow-hidden">
                 {ownedTeams.map((team, index) => (
                   <TeamListItem 
                     key={team._id} 
@@ -493,7 +493,7 @@ const TeamsPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden">
+              <div className="bg-black rounded-xl shadow-sm border border-black overflow-hidden">
                 {memberTeams.map((team, index) => (
                   <TeamListItem 
                     key={team._id} 
@@ -512,7 +512,7 @@ const TeamsPage: React.FC = () => {
         
         {/* Enhanced empty state */}
         {teams.length === 0 && !loading && (
-          <div className="flex flex-col items-center justify-center py-12 bg-gray-800 rounded-xl shadow-sm border border-gray-700 mt-6">
+          <div className="flex flex-col items-center justify-center py-12 bg-black rounded-xl shadow-sm border border-black mt-6">
             <div className="h-20 w-20 rounded-xl bg-indigo-900/20 border border-indigo-900/30 flex items-center justify-center mb-6">
               <FolderPlus className="h-10 w-10 text-indigo-400" />
             </div>
@@ -535,7 +535,7 @@ const TeamsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
-                  className="inline-flex items-center px-5 py-2.5 border border-gray-700 text-sm font-medium rounded-xl shadow-sm text-gray-300 bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6366F1] transition-all"
+                  className="inline-flex items-center px-5 py-2.5 border border-black text-sm font-medium rounded-xl shadow-sm text-gray-300 bg-black hover:bg-black-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6366F1] transition-all"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Retry
@@ -547,8 +547,8 @@ const TeamsPage: React.FC = () => {
         
         {/* Search results with improved visual hierarchy */}
         {searchQuery && (
-          <div className="mt-8 bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-700">
+          <div className="mt-8 bg-black rounded-xl shadow-sm border border-black overflow-hidden">
+            <div className="px-6 py-4 border-b border-black">
               <h2 className="text-lg font-medium text-gray-200">Search Results</h2>
               <p className="mt-1 text-sm text-gray-400">
                 Found {filteredTeams.length} team{filteredTeams.length !== 1 ? 's' : ''} matching &qout;{searchQuery}&quot;
@@ -557,7 +557,7 @@ const TeamsPage: React.FC = () => {
             
             {filteredTeams.length > 0 ? (
               view === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 bg-gray-700 gap-6 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 bg-black-700 gap-6 p-6">
                   {filteredTeams.map(team => (
                     team && team._id ? (
                       <TeamCard
@@ -586,7 +586,7 @@ const TeamsPage: React.FC = () => {
               )
             ) : (
               <div className="text-center py-8">
-                <div className="mx-auto w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center mb-4">
+                <div className="mx-auto w-16 h-16 rounded-full bg-black-700 flex items-center justify-center mb-4">
                   <Search className="h-8 w-8 text-gray-500" />
                 </div>
                 <p className="text-gray-400">No teams match your search criteria.</p>

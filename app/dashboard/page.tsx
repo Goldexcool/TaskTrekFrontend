@@ -6,23 +6,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  Plus, ArrowRight, Clock, Calendar, Star, AlertCircle,
-  CheckSquare, MoreHorizontal, Users, Layers, Activity,
-  PieChart, TrendingUp, FileText, Edit, Trash2, Filter, X, Search, Square
+  Plus, ArrowRight, Clock, Calendar, CheckSquare, Users, Layers, Activity,
+  Edit, Trash2, Filter, X, Search, Square
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import HeaderDash from '../components/HeaderDash';
 import { fetchTeams, Team, deleteTeam } from '../store/teamService';
-import { fetchUserTasks, Task } from '../store/useTaskStore';
+import { Task } from '../store/useTaskStore';
 import useAuthStore from '../store/useAuthStore';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { format } from 'timeago.js';
-import useActivityStore, { ActivityItem } from '../store/activityStore';
+import useActivityStore from '../store/activityStore';
 import { Board } from '../store/boardService';
-import AppLayout from '../components/AppLayout';
-import apiClient from '../utils/apiClient'; // Assuming apiClient is imported from utils
+import apiClient from '../utils/apiClient';
+import { useToast } from '../components/Toast';
 
-// API response interfaces
+// API response interfaceschdkc 
 interface TeamApiResponse {
   success?: boolean;
   count?: number;
@@ -144,7 +141,6 @@ const DashboardPage: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [tasks, setTasks] = useState<ExtendedTask[]>([]);
-  const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingBoards, setLoadingBoards] = useState(true);
   const [loadingTasks, setLoadingTasks] = useState(true);
@@ -156,6 +152,7 @@ const DashboardPage: React.FC = () => {
   const [dueTodayCount, setDueTodayCount] = useState(0);
 
   const { user } = useAuthStore();
+  const { success, error: toastError, info } = useToast();
 
   // New state variables for filtering
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -188,8 +185,10 @@ const DashboardPage: React.FC = () => {
       // Immediately update completion count for better UX
       if (!completed) {
         setCompletedTaskCount(prev => prev + 1);
+        success('Task completed!', 'Great job on completing this task!');
       } else {
         setCompletedTaskCount(prev => Math.max(0, prev - 1));
+        info('Task reopened', 'Task has been marked as incomplete');
       }
       
       // Use relative paths with apiClient
@@ -245,6 +244,7 @@ const DashboardPage: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to update task status:', error);
+      toastError('Failed to update task', 'Please try again later');
       
       // Revert optimistic update on failure
       setTasks(prevTasks => 
@@ -612,9 +612,10 @@ const DashboardPage: React.FC = () => {
         await deleteTeam(teamId);
         setTeams(teams.filter(team => team._id !== teamId));
         setTeamsCount(prev => prev - 1);
+        success('Team deleted', 'Team has been successfully deleted');
       } catch (error) {
         console.error('Failed to delete team:', error);
-        alert('Failed to delete team. Please try again.');
+        toastError('Failed to delete team', 'Please try again later');
       }
     }
   };
@@ -726,171 +727,186 @@ const DashboardPage: React.FC = () => {
   }, [tasks, searchQuery, priorityFilter, dueDateFilter, completionFilter, activeTaskTab]);
 
   return (
-    <AppLayout>
-      <div className="min-h-screen bg-gray-900">
-        <HeaderDash />
-
-        <main className="pt-15 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-              <p className="mt-1 text-sm text-gray-400">
-
-                Welcome back{user?.name ? `, ${user.name}` : ''}! Here&apos;s what&apos;s happening with your projects.
+    <div className="min-h-screen bg-black">        
+      <motion.main 
+        className="pt-6 pb-6 px-6 mx-auto space-y-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+          {/* Header Section */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
+              <p className="text-white/70">
+                Welcome back{user?.name ? `, ${user.name}` : ''}! Here&apos;s your project overview.
               </p>
             </div>
-            <div className="mt-4 md:mt-0 flex space-x-3">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/tasks"
+                className="inline-flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-white bg-black border border-white/20 hover:border-white/40 hover:bg-black/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                View All Tasks
+              </Link>
               <Link
                 href="/teams/create"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                className="inline-flex items-center px-4 py-2.5 text-sm font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-4 h-4 mr-2" />
                 Create Team
               </Link>
             </div>
           </div>
 
-          {/* Stats cards */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-indigo-900/50 rounded-md p-3">
-                    <Users className="h-6 w-6 text-indigo-400" />
+          {/* Stats Overview */}
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <motion.div 
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/20 backdrop-blur-sm"
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent" />
+              <div className="relative p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-blue-500/20 rounded-xl">
+                    <Users className="h-6 w-6 text-blue-400" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-400 truncate">Total Teams</dt>
-                      <dd>
-                        <div className="text-lg font-bold text-white">
-                          {loading ? <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> : teamsCount}
-                        </div>
-                      </dd>
-                    </dl>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">
+                      {loading ? <div className="w-8 h-6 bg-black-700 animate-pulse rounded"></div> : teamsCount}
+                    </div>
+                    <div className="text-sm text-blue-200">Teams</div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-700 px-5 py-3">
-                <div className="text-sm">
-                  <Link href="/teams" className="font-medium text-indigo-400 hover:text-indigo-300 flex items-center transition-colors">
-                    View all teams
-                    <ArrowRight className="ml-1 h-4 w-4" />
+                <div className="mt-4">
+                  <Link href="/teams" className="text-xs text-blue-300 hover:text-blue-200 flex items-center group transition-colors">
+                    View teams
+                    <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-900/50 rounded-md p-3">
-                    <Layers className="h-6 w-6 text-green-400" />
+            <motion.div 
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border border-emerald-500/20 backdrop-blur-sm"
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-transparent" />
+              <div className="relative p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-emerald-500/20 rounded-xl">
+                    <Layers className="h-6 w-6 text-emerald-400" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-400 truncate">Active Boards</dt>
-                      <dd>
-                        <div className="text-lg font-bold text-white">
-                          {loadingBoards ? <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> : boardsCount}
-                        </div>
-                      </dd>
-                    </dl>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">
+                      {loadingBoards ? <div className="w-8 h-6 bg-black-700 animate-pulse rounded"></div> : boardsCount}
+                    </div>
+                    <div className="text-sm text-emerald-200">Boards</div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-700 px-5 py-3">
-                <div className="text-sm">
-                  <Link href="/boards" className="font-medium text-green-400 hover:text-green-300 flex items-center transition-colors">
-                    View all boards
-                    <ArrowRight className="ml-1 h-4 w-4" />
+                <div className="mt-4">
+                  <Link href="/boards" className="text-xs text-emerald-300 hover:text-emerald-200 flex items-center group transition-colors">
+                    View boards
+                    <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-purple-900/50 rounded-md p-3">
+            <motion.div 
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/20 backdrop-blur-sm"
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent" />
+              <div className="relative p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-purple-500/20 rounded-xl">
                     <CheckSquare className="h-6 w-6 text-purple-400" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-400 truncate">Tasks Completed</dt>
-                      <dd>
-                        <div className="text-lg font-bold text-white">
-                          {loadingTasks ?
-                            <span className="inline-block w-12 h-4 bg-gray-700 animate-pulse rounded"></span> :
-                            `${completedTaskCount}/${totalTaskCount}`
-                          }
-                        </div>
-                      </dd>
-                    </dl>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">
+                      {loadingTasks ? <div className="w-12 h-6 bg-black-700 animate-pulse rounded"></div> : `${completedTaskCount}/${totalTaskCount}`}
+                    </div>
+                    <div className="text-sm text-purple-200">Completed</div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-700 px-5 py-3">
-                <div className="text-sm">
-                  <Link href="/tasks" className="font-medium text-purple-400 hover:text-purple-300 flex items-center transition-colors">
-                    View all tasks
-                    <ArrowRight className="ml-1 h-4 w-4" />
+                <div className="mt-4">
+                  <Link href="/tasks" className="text-xs text-purple-300 hover:text-purple-200 flex items-center group transition-colors">
+                    View tasks
+                    <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-yellow-900/50 rounded-md p-3">
-                    <Clock className="h-6 w-6 text-yellow-400" />
+            <motion.div 
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600/20 to-amber-800/20 border border-amber-500/20 backdrop-blur-sm"
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-600/10 to-transparent" />
+              <div className="relative p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-amber-500/20 rounded-xl">
+                    <Clock className="h-6 w-6 text-amber-400" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-400 truncate">Due Today</dt>
-                      <dd>
-                        <div className="text-lg font-bold text-white">
-                          {loadingTasks ?
-                            <span className="inline-block w-6 h-4 bg-gray-700 animate-pulse rounded"></span> :
-                            dueTodayCount
-                          }
-                        </div>
-                      </dd>
-                    </dl>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">
+                      {loadingTasks ? <div className="w-6 h-6 bg-black-700 animate-pulse rounded"></div> : dueTodayCount}
+                    </div>
+                    <div className="text-sm text-amber-200">Due Today</div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-700 px-5 py-3">
-                <div className="text-sm">
-                  <Link href="/tasks?filter=today" className="font-medium text-yellow-400 hover:text-yellow-300 flex items-center transition-colors">
+                <div className="mt-4">
+                  <Link href="/tasks?filter=today" className="text-xs text-amber-300 hover:text-amber-200 flex items-center group transition-colors">
                     View due tasks
-                    <ArrowRight className="ml-1 h-4 w-4" />
+                    <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          {/* Two column layout */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            {/* Column 1: Your Teams */}
-            <div>
-              <div className="bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-                <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
-                  <h2 className="text-lg font-medium text-white flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-gray-400" />
-                    Your Teams
-                  </h2>
-                  <Link
-                    href="/teams"
-                    className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    View all
-                  </Link>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Left Column - Teams & Boards */}
+            <div className="xl:col-span-2 space-y-6">
+              {/* Your Teams Section */}
+              <motion.div 
+                className="bg-black-900/50 backdrop-blur-sm rounded-2xl border border-black-800 overflow-hidden"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="p-6 border-b border-white/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-blue-500/20 rounded-lg">
+                        <Users className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">Your Teams</h2>
+                        <p className="text-sm text-white/70">Manage and collaborate with your teams</p>
+                      </div>
+                    </div>
+                    <Link
+                      href="/teams"
+                      className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      View all
+                    </Link>
+                  </div>
                 </div>
 
                 {loading ? (
-                  <div className="flex justify-center items-center py-10">
+                  <div className="flex justify-center items-center py-12">
                     <LoadingSpinner size="md" />
                   </div>
                 ) : error ? (
@@ -904,17 +920,15 @@ const DashboardPage: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <ul className="divide-y divide-gray-700">
-                    {teams.length > 0 && userOwnedTeams.length > 0 ? (
-                      // Display user's owned teams if any exist
-                      userOwnedTeams.slice(0, 3).map((team) => {
-                        const avatarStyle = getTeamAvatarStyle(team.name);
-
-                        return (
-                          <li key={team._id} className="px-6 py-5 relative group">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${team.avatar ? '' : avatarStyle.darkBg} flex items-center justify-center overflow-hidden ${team.avatar ? '' : avatarStyle.darkText} font-medium`}>
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      {teams.length > 0 && userOwnedTeams.length > 0 ? (
+                        userOwnedTeams.slice(0, 3).map((team) => {
+                          const avatarStyle = getTeamAvatarStyle(team.name);
+                          return (
+                            <div key={team._id} className="group relative">
+                              <div className="flex items-center p-4 rounded-xl bg-black-800/50 hover:bg-black-800 transition-all duration-200">
+                                <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${team.avatar ? '' : avatarStyle.darkBg} flex items-center justify-center overflow-hidden ${team.avatar ? '' : avatarStyle.darkText} font-semibold`}>
                                   {team.avatar ? (
                                     <img
                                       src={team.avatar}
@@ -925,26 +939,23 @@ const DashboardPage: React.FC = () => {
                                     team.name.substring(0, 2).toUpperCase()
                                   )}
                                 </div>
-                                <div className="ml-4">
-                                  <h3 className="text-sm font-medium text-white">{team.name}</h3>
-                                  <div className="flex items-center mt-1">
-                                    <Users className="h-3.5 w-3.5 text-gray-500" />
-                                    <span className="ml-1 text-xs text-gray-500">
+                                <div className="ml-4 flex-1">
+                                  <h3 className="text-sm font-semibold text-white">{team.name}</h3>
+                                  <div className="flex items-center mt-1 space-x-4">
+                                    <div className="flex items-center text-xs text-white/70">
+                                      <Users className="h-3.5 w-3.5 mr-1" />
                                       {team.members ? team.members.length : 0} members
-                                    </span>
-                                    <span className="mx-1.5 text-gray-500">•</span>
-                                    <Layers className="h-3.5 w-3.5 text-gray-500" />
-                                    <span className="ml-1 text-xs text-gray-500">
+                                    </div>
+                                    <div className="flex items-center text-xs text-white/70">
+                                      <Layers className="h-3.5 w-3.5 mr-1" />
                                       {boards.filter(board => board.teamId === team._id).length} boards
-                                    </span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="relative">
-                                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
+                                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-2 transition-opacity">
                                   <Link
                                     href={`/teams/create?edit=true&id=${team._id}`}
-                                    className="p-1.5 text-gray-400 hover:text-white rounded-full hover:bg-gray-700"
+                                    className="p-2 text-white/70 hover:text-white rounded-lg hover:bg-black/70"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <Edit className="h-4 w-4" />
@@ -955,50 +966,42 @@ const DashboardPage: React.FC = () => {
                                       e.preventDefault();
                                       handleDeleteTeam(team._id);
                                     }}
-                                    className="p-1.5 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-700"
+                                    className="p-2 text-white/70 hover:text-red-400 rounded-lg hover:bg-black/70"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </button>
                                 </div>
                               </div>
+                              <Link
+                                href={`/teams/${team._id}`}
+                                className="absolute inset-0 z-0"
+                                aria-hidden="true"
+                              />
                             </div>
-                            <Link
-                              href={`/teams/${team._id}`}
-                              className="absolute inset-0 z-0"
-                              aria-hidden="true"
-                            />
-                          </li>
-                        );
-                      })
-                    ) : teams.length > 0 && userMemberTeams.length > 0 ? (
-                      // If user doesn't own any teams but is a member of some, show those
-                      userMemberTeams.slice(0, 3).map((team) => {
-                        const avatarStyle = getTeamAvatarStyle(team.name);
-
-                        return (
-                          <li key={team._id} className="px-6 py-5 relative group">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${team.avatar ? '' : 'bg-blue-900/50'} flex items-center justify-center overflow-hidden ${team.avatar ? '' : 'text-blue-300'} font-medium`}>
-                                  {team.avatar ? (
-                                    <img
-                                      src={team.avatar}
-                                      alt={team.name}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  ) : (
-                                    team.name.substring(0, 2).toUpperCase()
-                                  )}
-                                </div>
-                                <div className="ml-4">
-                                  <h3 className="text-sm font-medium text-white">{team.name}</h3>
-                                  <div className="flex items-center mt-1">
-                                    <span className="px-1.5 py-0.5 text-xs bg-blue-900/30 text-blue-300 rounded-full">Member</span>
-                                    <span className="mx-1.5 text-gray-500">•</span>
-                                    <Users className="h-3.5 w-3.5 text-gray-500" />
-                                    <span className="ml-1 text-xs text-gray-500">
-                                      {team.members ? team.members.length : 0} members
-                                    </span>
+                          );
+                        })
+                      ) : teams.length > 0 && userMemberTeams.length > 0 ? (
+                        userMemberTeams.slice(0, 3).map((team) => (
+                          <div key={team._id} className="group relative">
+                            <div className="flex items-center p-4 rounded-xl bg-black-800/50 hover:bg-black-800 transition-all duration-200">
+                              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-900/50 flex items-center justify-center text-blue-300 font-semibold">
+                                {team.avatar ? (
+                                  <img
+                                    src={team.avatar}
+                                    alt={team.name}
+                                    className="h-full w-full object-cover rounded-xl"
+                                  />
+                                ) : (
+                                  team.name.substring(0, 2).toUpperCase()
+                                )}
+                              </div>
+                              <div className="ml-4 flex-1">
+                                <h3 className="text-sm font-semibold text-white">{team.name}</h3>
+                                <div className="flex items-center mt-1 space-x-3">
+                                  <span className="px-2 py-1 text-xs bg-blue-900/30 text-blue-300 rounded-full">Member</span>
+                                  <div className="flex items-center text-xs text-white/70">
+                                    <Users className="h-3.5 w-3.5 mr-1" />
+                                    {team.members ? team.members.length : 0} members
                                   </div>
                                 </div>
                               </div>
@@ -1008,138 +1011,62 @@ const DashboardPage: React.FC = () => {
                               className="absolute inset-0 z-0"
                               aria-hidden="true"
                             />
-                          </li>
-                        );
-                      })
-                    ) : teams.length > 0 ? (
-                      // If there are teams but the user doesn't own any, show a message
-                      <li className="px-6 py-8 text-center">
-                        <div className="flex flex-col items-center">
-                          <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                            <Users className="h-6 w-6 text-gray-500" />
                           </div>
-                          <p className="text-sm text-gray-400">You don&apos;t manage any teams yet</p>
-                          <p className="mt-1 text-xs text-gray-500">Teams you create will appear here</p>
+                        ))
+                      ) : teams.length > 0 ? (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 mx-auto bg-black-800 rounded-full flex items-center justify-center mb-4">
+                            <Users className="h-8 w-8 text-white/50" />
+                          </div>
+                          <p className="text-sm text-white/70">You don&apos;t manage any teams yet</p>
+                          <p className="text-xs text-white/50 mt-1">Teams you create will appear here</p>
                         </div>
-                      </li>
-                    ) : (
-                      // If no teams at all, show a message
-                      <li className="px-6 py-8 text-center">
-                        <div className="flex flex-col items-center">
-                          <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                            <Users className="h-6 w-6 text-gray-500" />
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 mx-auto bg-black-800 rounded-full flex items-center justify-center mb-4">
+                            <Users className="h-8 w-8 text-white/50" />
                           </div>
-                          <p className="text-sm text-gray-400">No teams found</p>
-                          <p className="mt-1 text-xs text-gray-500">Create your first team to get started</p>
+                          <p className="text-sm text-white/70">No teams found</p>
+                          <p className="text-xs text-white/50 mt-1">Create your first team to get started</p>
                         </div>
-                      </li>
-                    )}
+                      )}
 
-                    {/* Create team item */}
-                    <li className="px-6 py-4">
-                      <Link
-                        href="/teams/create"
-                        className="flex items-center justify-center py-3 border-2 border-dashed border-gray-700 rounded-lg text-sm font-medium text-gray-400 hover:border-indigo-500 hover:text-indigo-400 transition-colors"
-                      >
-                        <Plus className="h-5 w-5 mr-2" />
-                        Create New Team
-                      </Link>
-                    </li>
-                  </ul>
-                )}
-              </div>
-
-              {/* Recent Boards */}
-              <div className="mt-8 bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-                <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
-                  <h2 className="text-lg font-medium text-white flex items-center">
-                    <Layers className="h-5 w-5 mr-2 text-gray-400" />
-                    Recent Boards
-                  </h2>
-                  <Link
-                    href="/boards"
-                    className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    View all
-                  </Link>
-                </div>
-
-                <ul className="divide-y divide-gray-700">
-                  {loadingBoards ? (
-                    <li className="flex justify-center items-center py-10">
-                      <LoadingSpinner size="md" />
-                    </li>
-                  ) : recentBoards.length > 0 ? (
-                    recentBoards.map((board) => {
-                      const color = getBoardColor(board.title || 'Untitled');
-                      const teamName = teams.find(t => t._id === board.teamId)?.name || 'Personal';
-                      const updatedTime = format(new Date(board.updatedAt || Date.now()));
-
-                      return (
-                        <li key={board._id} className="px-6 py-4 relative">
-                          <div className="flex items-center">
-                            <div className={`flex-shrink-0 w-8 h-8 rounded-md ${getBoardColor(board.title || 'Untitled')} flex items-center justify-center text-white font-medium`}>
-                              {(board.title || 'Untitled').substring(0, 1)}
-                            </div>
-                            <div className="ml-3 flex-1">
-                              <h3 className="text-sm font-medium text-white">{board.title || 'Untitled Board'}</h3>
-                              <div className="flex items-center mt-0.5">
-                                <span className="text-xs text-gray-500">{teamName}</span>
-                                <span className="mx-1.5 text-gray-500">•</span>
-                                <Clock className="h-3 w-3 text-gray-500" />
-                                <span className="ml-1 text-xs text-gray-500">{updatedTime}</span>
-                              </div>
-                            </div>
-                          </div>
+                      {(teams.length > 0 && (userOwnedTeams.length > 0 || userMemberTeams.length > 0)) && (
+                        <div className="pt-4 border-t border-white/20">
                           <Link
-                            href={`/boards/${board._id}`}
-                            className="absolute inset-0 z-0"
-                            aria-hidden="true"
-                          />
-                        </li>
-                      );
-                    })
-                  ) : (
-                    <li className="px-6 py-8 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                          <Layers className="h-6 w-6 text-gray-500" />
+                            href="/teams/create"
+                            className="flex items-center justify-center py-3 px-4 border-2 border-dashed border-white/20 rounded-xl text-sm font-medium text-white/70 hover:border-indigo-500 hover:text-indigo-400 transition-colors group"
+                          >
+                            <Plus className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                            Create New Team
+                          </Link>
                         </div>
-                        <p className="text-sm text-gray-400">No boards found</p>
-                        <p className="mt-1 text-xs text-gray-500">Create your first board to get started</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Recent Boards Section */}
+              <motion.div 
+                className="bg-black-900/50 backdrop-blur-sm rounded-2xl border border-black-800 overflow-hidden"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="p-6 border-b border-white/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-emerald-500/20 rounded-lg">
+                        <Layers className="h-5 w-5 text-emerald-400" />
                       </div>
-                    </li>
-                  )}
-
-
-                </ul>
-              </div>
-            </div>
-
-            {/* Column 2: Upcoming Tasks and Activity */}
-            <div>
-              {/* Upcoming Tasks with filtering */}
-              <div className="bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-                <div className="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
-                  <h2 className="text-lg font-medium text-white flex items-center">
-                    <Calendar className="h-5 w-5 mr-2 text-gray-400" />
-                    Tasks
-                    {!loadingTasks && filteredUpcomingTasks.length > 0 && (
-                      <span className="ml-2 text-xs bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full">
-                        {filteredUpcomingTasks.length}
-                      </span>
-                    )}
-                  </h2>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setShowFilters(!showFilters)}
-                      className="flex items-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"
-                    >
-                      <Filter className="h-4 w-4" />
-                    </button>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">Recent Boards</h2>
+                        <p className="text-sm text-white/70">Your most active project boards</p>
+                      </div>
+                    </div>
                     <Link
-                      href="/tasks"
+                      href="/boards"
                       className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                     >
                       View all
@@ -1147,127 +1074,130 @@ const DashboardPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Filters */}
-                <AnimatePresence>
-                  {showFilters && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-4 border-b border-gray-700 bg-gray-800/80">
-                        <div className="flex flex-col space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                              <label className="block mb-1 text-xs font-medium text-gray-400">Search</label>
-                              <div className="relative">
-                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
-                                <input 
-                                  type="text"
-                                  value={searchQuery}
-                                  onChange={(e) => setSearchQuery(e.target.value)}
-                                  placeholder="Search tasks..."
-                                  className="w-full pl-8 pr-3 py-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
-                                />
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {loadingBoards ? (
+                      <div className="flex justify-center items-center py-12">
+                        <LoadingSpinner size="md" />
+                      </div>
+                    ) : recentBoards.length > 0 ? (
+                      recentBoards.map((board) => {
+                        const teamName = teams.find(t => t._id === board.teamId)?.name || 'Personal';
+                        const updatedTime = formatRelativeTime(new Date(board.updatedAt || Date.now()));
+                        
+                        return (
+                          <div key={board._id} className="group relative">
+                            <div className="flex items-center p-4 rounded-xl bg-black-800/50 hover:bg-black-800 transition-all duration-200">
+                              <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${getBoardColor(board.title || 'Untitled')} flex items-center justify-center text-white font-semibold shadow-lg`}>
+                                {(board.title || 'Untitled').substring(0, 1)}
+                              </div>
+                              <div className="ml-4 flex-1">
+                                <h3 className="text-sm font-semibold text-white">{board.title || 'Untitled Board'}</h3>
+                                <div className="flex items-center mt-1 space-x-4">
+                                  <span className="text-xs text-white/70">{teamName}</span>
+                                  <div className="flex items-center text-xs text-white/70">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {updatedTime}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ArrowRight className="h-5 w-5 text-white/70 group-hover:text-white group-hover:translate-x-1 transition-all" />
                               </div>
                             </div>
-                            
-                            <div>
-                              <label className="block mb-1 text-xs font-medium text-gray-400">Priority</label>
-                              <select
-                                value={priorityFilter}
-                                onChange={(e) => setPriorityFilter(e.target.value)}
-                                className="w-full py-1.5 px-3 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
-                              >
-                                <option value="all">All Priorities</option>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="critical">Critical</option>
-                              </select>
-                            </div>
-                            
-                            <div>
-                              <label className="block mb-1 text-xs font-medium text-gray-400">Due Date</label>
-                              <select
-                                value={dueDateFilter}
-                                onChange={(e) => setDueDateFilter(e.target.value)}
-                                className="w-full py-1.5 px-3 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
-                              >
-                                <option value="all">All Dates</option>
-                                <option value="today">Today</option>
-                                <option value="tomorrow">Tomorrow</option>
-                                <option value="week">This Week</option>
-                                <option value="month">This Month</option>
-                                <option value="overdue">Overdue</option>
-                              </select>
-                            </div>
+                            <Link
+                              href={`/boards/${board._id}`}
+                              className="absolute inset-0 z-0"
+                              aria-hidden="true"
+                            />
                           </div>
-                          
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <label className="block mb-1 text-xs font-medium text-gray-400">Status</label>
-                              <select
-                                value={completionFilter}
-                                onChange={(e) => setCompletionFilter(e.target.value)}
-                                className="py-1.5 px-3 bg-gray-700 border border-gray-600 rounded-md text-sm text-white"
-                              >
-                                <option value="all">All Status</option>
-                                <option value="completed">Completed</option>
-                                <option value="incomplete">Incomplete</option>
-                              </select>
-                            </div>
-                            
-                            <button
-                              onClick={() => {
-                                setSearchQuery('');
-                                setPriorityFilter('all');
-                                setDueDateFilter('all');
-                                setCompletionFilter('all');
-                                setActiveTaskTab('all');
-                              }}
-                              className="flex items-center py-1.5 px-3 bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 rounded-md"
-                            >
-                              <X className="h-3 w-3 mr-1" />
-                              Reset
-                            </button>
-                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 mx-auto bg-black-800 rounded-full flex items-center justify-center mb-4">
+                          <Layers className="h-8 w-8 text-white/50" />
                         </div>
+                        <p className="text-sm text-white/70">No boards found</p>
+                        <p className="text-xs text-white/50 mt-1">Create your first board to get started</p>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
 
-                {/* Task tabs */}
-                <div className="border-b border-gray-700">
-                  <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700">
+            {/* Right Column - Tasks & Activity */}
+            <div className="space-y-6">
+              {/* Tasks Overview */}
+              <motion.div 
+                className="bg-black-900/50 backdrop-blur-sm rounded-2xl border border-gray-800 overflow-hidden"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="p-6 border-b border-gray-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        <Calendar className="h-5 w-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">Tasks</h2>
+                        <p className="text-sm text-white/70">
+                          {!loadingTasks && filteredUpcomingTasks.length > 0 && (
+                            <span>{filteredUpcomingTasks.length} upcoming tasks</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-black-800 transition-colors"
+                      >
+                        <Filter className="h-4 w-4" />
+                      </button>
+                      <Link
+                        href="/tasks"
+                        className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        View all
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Task Tabs */}
+                <div className="border-b border-white/20">
+                  <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-white/20">
                     <button
-                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'all' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      className={`px-4 py-3 text-sm font-medium transition-colors ${activeTaskTab === 'all' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/70 hover:text-white'}`}
                       onClick={() => setActiveTaskTab('all')}
                     >
                       All
                     </button>
                     <button
-                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'today' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      className={`px-4 py-3 text-sm font-medium transition-colors ${activeTaskTab === 'today' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/70 hover:text-white'}`}
                       onClick={() => setActiveTaskTab('today')}
                     >
                       Today
                     </button>
                     <button
-                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'upcoming' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      className={`px-4 py-3 text-sm font-medium transition-colors ${activeTaskTab === 'upcoming' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/70 hover:text-white'}`}
                       onClick={() => setActiveTaskTab('upcoming')}
                     >
                       Upcoming
                     </button>
                     <button
-                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'overdue' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      className={`px-4 py-3 text-sm font-medium transition-colors ${activeTaskTab === 'overdue' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/70 hover:text-white'}`}
                       onClick={() => setActiveTaskTab('overdue')}
                     >
                       Overdue
                     </button>
                     <button
-                      className={`px-4 py-2 text-sm font-medium ${activeTaskTab === 'completed' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                      className={`px-4 py-3 text-sm font-medium transition-colors ${activeTaskTab === 'completed' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/70 hover:text-white'}`}
                       onClick={() => setActiveTaskTab('completed')}
                     >
                       Completed
@@ -1275,23 +1205,23 @@ const DashboardPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Task list */}
-                <ul className="divide-y divide-gray-700">
-                  {loadingTasks ? (
-                    <li className="flex justify-center items-center py-10">
-                      <LoadingSpinner size="md" />
-                    </li>
-                  ) : filteredUpcomingTasks.length > 0 ? (
-                    filteredUpcomingTasks.slice(0, 6).map((task) => (
-                      <li key={task._id} className="px-6 py-4 relative">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 mr-3">
+                {/* Task List */}
+                <div className="p-6 max-h-96 overflow-y-auto">
+                  <div className="space-y-3">
+                    {loadingTasks ? (
+                      <div className="flex justify-center items-center py-12">
+                        <LoadingSpinner size="md" />
+                      </div>
+                    ) : filteredUpcomingTasks.length > 0 ? (
+                      filteredUpcomingTasks.slice(0, 6).map((task) => (
+                        <div key={task._id} className="group relative">
+                          <div className="flex items-center p-3 rounded-xl bg-black-800/50 hover:bg-black-800 transition-all duration-200">
                             <button
                               onClick={() => handleTaskCompletion(task._id || task.id || '', !!task.completed || !!task.isCompleted)}
-                              className={`p-1.5 rounded-md hover:bg-gray-700 ${
+                              className={`p-1.5 rounded-lg mr-3 transition-colors ${
                                 task.completed || task.isCompleted
-                                  ? 'text-green-500' 
-                                  : 'text-gray-500 hover:text-white'
+                                  ? 'text-green-500 bg-green-500/20' 
+                                  : 'text-white/50 hover:text-white hover:bg-black-700'
                               }`}
                               aria-label={task.completed || task.isCompleted ? "Mark as incomplete" : "Mark as complete"}
                             >
@@ -1300,153 +1230,159 @@ const DashboardPage: React.FC = () => {
                                 : <Square className="h-4 w-4" />
                               }
                             </button>
-                          </div>
-                          <div className="flex-1">
-                            <h3 className={`text-sm font-medium ${task.completed || task.isCompleted ? 'text-gray-400 line-through' : 'text-white'}`}>
-                              {task.title}
-                            </h3>
-                            <div className="flex items-center mt-0.5">
-                              <Clock className="h-3 w-3 text-gray-500" />
-                              <span className="ml-1 text-xs text-gray-500">
-                                Due {formatDueDate(task.dueDate)}
-                              </span>
-                              <span className="mx-1.5 text-gray-500">•</span>
-                              <span className={`text-xs px-1.5 py-0.5 rounded-full ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-900/50 text-red-300' :
-                                task.priority === 'medium' ? 'bg-yellow-900/50 text-yellow-300' :
-                                  'bg-green-900/50 text-green-300'
-                                }`}>
-                                {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Normal'}
-                              </span>
+                            <div className="flex-1 min-w-0">
+                              <h3 className={`text-sm font-medium ${task.completed || task.isCompleted ? 'text-white/50 line-through' : 'text-white'}`}>
+                                {task.title}
+                              </h3>
+                              <div className="flex items-center mt-1 space-x-3">
+                                {task.dueDate && (
+                                  <div className="flex items-center text-xs text-white/70">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    Due {formatDueDate(task.dueDate)}
+                                  </div>
+                                )}
+                                {task.priority && (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
+                                    task.priority === 'high' || task.priority === 'critical' ? 'bg-red-900/50 text-red-300' :
+                                    task.priority === 'medium' ? 'bg-yellow-900/50 text-yellow-300' :
+                                    'bg-green-900/50 text-green-300'
+                                  }`}>
+                                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0">
+                              {task.assignedTo ? (
+                                <div className="w-8 h-8 rounded-lg bg-indigo-900/50 flex items-center justify-center text-indigo-300 font-medium text-xs">
+                                  {task.assignedUser && task.assignedUser.name ?
+                                    task.assignedUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() :
+                                    'U'}
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-black-700/50 flex items-center justify-center text-white/70">
+                                  <Users className="h-4 w-4" />
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div className="ml-4">
-                            {task.assignedTo ? (
-                              <div className="h-8 w-8 rounded-full bg-indigo-900/50 flex items-center justify-center text-indigo-300 font-medium text-xs">
-                                {task.assignedUser && task.assignedUser.name ?
-                                  task.assignedUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() :
-                                  'U'}
-                              </div>
-                            ) : (
-                              <div className="h-8 w-8 rounded-full bg-gray-700/50 flex items-center justify-center text-gray-400 font-medium text-xs">
-                                <Users className="h-4 w-4" />
-                              </div>
-                            )}
-                          </div>
+                          <Link
+                            href={task.boardId ? `/boards/${task.boardId}` : '/tasks'}
+                            className="absolute inset-0 z-0"
+                            aria-hidden="true"
+                          />
                         </div>
-                        <Link
-                          href={task.boardId ? `/boards/${task.boardId}` : '/tasks'}
-                          className="absolute inset-0 z-0"
-                          aria-hidden="true"
-                        />
-                      </li>
-                    ))
-                  ) : (
-                    <li className="px-6 py-8 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center mb-3">
-                          <Calendar className="h-6 w-6 text-gray-500" />
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 mx-auto bg-black-800 rounded-full flex items-center justify-center mb-4">
+                          <Calendar className="h-8 w-8 text-white/50" />
                         </div>
-                        <p className="text-sm text-gray-400">No tasks match your filters</p>
-                        <p className="mt-1 text-xs text-gray-500">Try different filters or create a new task</p>
+                        <p className="text-sm text-white/70">No tasks match your filters</p>
+                        <p className="text-xs text-white/50 mt-1">Try different filters or create a new task</p>
                       </div>
-                    </li>
-                  )}
+                    )}
 
-                  {filteredUpcomingTasks.length > 6 && (
-                    <li className="px-6 py-3 bg-gray-700/50 text-center">
-                      <Link
-                        href="/tasks"
-                        className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                      >
-                        View {filteredUpcomingTasks.length - 6} more tasks
-                      </Link>
-                    </li>
-                  )}
-                </ul>
-              </div>
+                    {filteredUpcomingTasks.length > 6 && (
+                      <div className="pt-4 border-t border-gray-800 text-center">
+                        <Link
+                          href="/tasks"
+                          className="inline-flex items-center text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors group"
+                        >
+                          View {filteredUpcomingTasks.length - 6} more tasks
+                          <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
 
               {/* Activity Feed */}
-              <div className="mt-8 bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-700">
-                <div className="px-6 py-5 border-b border-gray-700">
-                  <h2 className="text-lg font-medium text-white flex items-center">
-                    <Activity className="h-5 w-5 mr-2 text-gray-400" />
-                    Activity Feed
+              <motion.div 
+                className="bg-black-900/50 backdrop-blur-sm rounded-2xl border border-black-800 overflow-hidden"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <div className="p-6 border-b border-gray-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-orange-500/20 rounded-lg">
+                        <Activity className="h-5 w-5 text-orange-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">Activity Feed</h2>
+                        <p className="text-sm text-white/70">Recent updates across your projects</p>
+                      </div>
+                    </div>
                     {!loadingActivity && combinedFeed.length > 0 && (
-                      <span className="ml-2 text-xs bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full">
+                      <span className="px-2 py-1 text-xs bg-orange-900/60 text-orange-300 rounded-full">
                         {combinedFeed.length}
                       </span>
                     )}
-                  </h2>
+                  </div>
                 </div>
 
-                {loadingActivity ? (
-                  <div className="flex justify-center items-center py-10">
-                    <LoadingSpinner size="md" />
-                  </div>
-                ) : (
-                  <div className="flow-root px-6 py-5">
-                    <ul className="-mb-8">
+                <div className="p-6">
+                  {loadingActivity ? (
+                    <div className="flex justify-center items-center py-12">
+                      <LoadingSpinner size="md" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
                       {combinedFeed.length > 0 ? (
                         combinedFeed.slice(0, 4).map((activity, idx) => (
-                          <li key={activity._id || activity.id || idx}>
-                            <div className="relative pb-8">
-                              {/* Timeline connector */}
-                              {idx !== combinedFeed.slice(0, 4).length - 1 && (
-                                <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-700" aria-hidden="true" />
-                              )}
-
-                              <div className="relative flex space-x-3">
-                                {/* Avatar */}
-                                <div className="h-10 w-10 rounded-full bg-indigo-900/50 flex items-center justify-center ring-8 ring-gray-800">
-                                  <span className="text-indigo-300 font-medium">
-                                    {getUserInitials(activity)}
-                                  </span>
+                          <div key={activity._id || activity.id || idx} className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-900/50 flex items-center justify-center">
+                              <span className="text-indigo-300 font-medium text-sm">
+                                {getUserInitials(activity)}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm font-medium text-white">
+                                  {getUserDisplayName(activity, user?._id)}
                                 </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                  <div>
-                                    <div className="text-sm font-medium text-white">
-                                      {getUserDisplayName(activity, user?._id)}
-                                    </div>
-                                    <p className="mt-0.5 text-sm text-gray-500">
-                                      {getTimeAgo(activity.timestamp || activity.createdAt)}
-                                    </p>
-                                  </div>
-                                  <div className="mt-2 text-sm text-gray-400">
-                                    <p>{formatActivityText(activity)}</p>
-                                  </div>
+                                <div className="text-xs text-white/50">
+                                  {getTimeAgo(activity.timestamp || activity.createdAt)}
                                 </div>
                               </div>
+                              <div className="mt-1 text-sm text-white/70">
+                                {formatActivityText(activity)}
+                              </div>
                             </div>
-                          </li>
+                          </div>
                         ))
                       ) : (
-                        <li className="text-center py-8">
-                          <p className="text-sm text-gray-400">No recent activity</p>
-                        </li>
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 mx-auto bg-black-800 rounded-full flex items-center justify-center mb-4">
+                            <Activity className="h-8 w-8 text-white/50" />
+                          </div>
+                          <p className="text-sm text-white/70">No recent activity</p>
+                          <p className="text-xs text-gray-500 mt-1">Activity will appear here as you work</p>
+                        </div>
                       )}
-                    </ul>
-                  </div>
-                )}
 
-                {combinedFeed.length > 4 && (
-                  <div className="px-6 py-3 bg-gray-700 text-center">
-                    <Link
-                      href="/notifications"
-                      className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                    >
-                      View more activity
-                    </Link>
-                  </div>
-                )}
-              </div>
+                      {combinedFeed.length > 4 && (
+                        <div className="pt-4 border-t border-gray-800 text-center">
+                          <Link
+                            href="/notifications"
+                            className="inline-flex items-center text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors group"
+                          >
+                            View more activity
+                            <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
-    </AppLayout>
-
   );
 };
 

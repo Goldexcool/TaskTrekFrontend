@@ -10,7 +10,7 @@ interface TeamNotFoundProps {
 const TeamNotFound: React.FC<TeamNotFoundProps> = ({ message = "Team not found", teamId }) => {
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="max-w-md mx-auto bg-white dark:bg-gray-800 shadow-sm rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+      <div className="max-w-md mx-auto bg-white dark:bg-black-800 shadow-sm rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center">
         <div className="flex justify-center mb-6">
           <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
             <Folder className="h-12 w-12 text-amber-600 dark:text-amber-500" />
@@ -21,7 +21,7 @@ const TeamNotFound: React.FC<TeamNotFoundProps> = ({ message = "Team not found",
         <p className="text-gray-600 dark:text-gray-300 mb-6">
           {message}
           {teamId && (
-            <span className="block mt-2 text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+            <span className="block mt-2 text-sm font-mono bg-black-100 dark:bg-black-700 px-2 py-1 rounded">
               ID: {teamId}
             </span>
           )}
@@ -32,7 +32,7 @@ const TeamNotFound: React.FC<TeamNotFoundProps> = ({ message = "Team not found",
             <ArrowLeft className="h-4 w-4" />
             Back to Teams
           </Link>
-          <Link href="/dashboard" className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <Link href="/dashboard" className="flex items-center justify-center gap-2 px-4 py-2 bg-black-50 dark:bg-black-700/50 text-gray-600 dark:text-gray-300 rounded-md hover:bg-black-100 dark:hover:bg-black-700 transition-colors">
             <Home className="h-4 w-4" />
             Go to Dashboard
           </Link>

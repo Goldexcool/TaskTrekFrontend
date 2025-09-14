@@ -105,7 +105,7 @@ const TeamCardWithBoardCreate: React.FC<TeamCardWithBoardCreateProps> = ({ team,
   };
 
   return (
-    <div className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
+    <div className="group bg-white dark:bg-black-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
       <div className={`h-24 ${getColorClass(team.name)} relative flex items-center justify-center`}>
         {team.avatar ? (
           <img
@@ -170,7 +170,7 @@ const TeamCardWithBoardCreate: React.FC<TeamCardWithBoardCreateProps> = ({ team,
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-md w-full"
+            className="bg-white dark:bg-black-800 rounded-xl shadow-xl p-6 max-w-md w-full"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -188,7 +188,7 @@ const TeamCardWithBoardCreate: React.FC<TeamCardWithBoardCreateProps> = ({ team,
                   value={newBoardTitle}
                   onChange={(e) => setNewBoardTitle(e.target.value)}
                   placeholder="Enter board name"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                   required
                   autoFocus
                 />
@@ -203,7 +203,7 @@ const TeamCardWithBoardCreate: React.FC<TeamCardWithBoardCreateProps> = ({ team,
                   value={newBoardDescription}
                   onChange={(e) => setNewBoardDescription(e.target.value)}
                   placeholder="Enter board description"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-20 resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white h-20 resize-none"
                 />
               </div>
 
@@ -241,7 +241,7 @@ const TeamCardWithBoardCreate: React.FC<TeamCardWithBoardCreateProps> = ({ team,
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  className="px-4 py-2 bg-black-200 dark:bg-black-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-black-300 dark:hover:bg-black-600 transition-colors"
                 >
                   Cancel
                 </button>

@@ -9,6 +9,7 @@ import { Layout, ArrowLeft, Check, CheckCircle2, AlertCircle } from 'lucide-reac
 import { motion } from 'framer-motion';
 import { useToast } from '@/app/hooks/useToast';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
+import AppLayout from '@/app/components/AppLayout';
 import { createBoard } from '@/app/store/boardService';
 import useCardColorStore, { CARD_COLORS, DEFAULT_COLOR } from '@/app/store/useCardColorStore';
 import BoardColorPicker from '@/app/components/BoardColorPicker';
@@ -113,7 +114,7 @@ function BoardForm() {
   if (error && !teamId) {
     return (
       <div className="container max-w-4xl mx-auto px-4 py-16">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
+        <div className="bg-white dark:bg-black-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
           <div className="flex justify-center mb-6 text-red-500">
             <AlertCircle className="h-16 w-16" />
           </div>
@@ -133,7 +134,8 @@ function BoardForm() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-8">
+    <AppLayout>
+      <div className="container max-w-4xl mx-auto px-4 py-8">
       {/* Back button */}
       <div className="mb-8">
         <Link 
@@ -148,7 +150,7 @@ function BoardForm() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+        className="bg-white dark:bg-black-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         {/* Header with live preview - Add immediate feedback */}
         <div className={`bg-gradient-to-r ${selectedBackground} px-6 py-5 text-white`}>
@@ -183,7 +185,7 @@ function BoardForm() {
                   }
                 }}
                 placeholder="e.g. Marketing Campaign 2025"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                 required
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -202,7 +204,7 @@ function BoardForm() {
                 onChange={(e) => setBoardDescription(e.target.value)}
                 placeholder="Add details about this board's purpose and goals..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-black-700 text-gray-900 dark:text-white"
               />
             </div>
 
@@ -287,9 +289,9 @@ function BoardForm() {
             </div>
 
             {/* Preview */}
-            <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700/30">
+            <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-black-50 dark:bg-black-700/30">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Preview</h3>
-              <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-black-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className={`h-20 bg-gradient-to-r ${selectedBackground} relative`}>
                   {/* Enhanced board title overlay with improved visibility */}
                   <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/50 to-transparent">
@@ -318,7 +320,7 @@ function BoardForm() {
             <div className="flex justify-end gap-3 pt-4">
               <Link
                 href={`/teams/${teamId}`}
-                className="px-5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="px-5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-700 transition-colors"
               >
                 Cancel
               </Link>
@@ -341,6 +343,7 @@ function BoardForm() {
         </form>
       </motion.div>
     </div>
+    </AppLayout>
   );
 }
 

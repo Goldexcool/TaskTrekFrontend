@@ -133,7 +133,7 @@ const EditBoardPage: React.FC = () => {
   if (!board && !isLoading) {
     return (
       <div className="container max-w-4xl mx-auto px-4 py-16">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
+        <div className="bg-white dark:bg-black-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
           <div className="flex justify-center mb-6 text-red-500">
             <AlertCircle className="h-16 w-16" />
           </div>
@@ -170,7 +170,7 @@ const EditBoardPage: React.FC = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+        className="bg-white dark:bg-black-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         {/* Header with live preview */}
         <div className={`bg-gradient-to-r ${selectedBackground} px-6 py-5 text-white`}>
@@ -197,7 +197,7 @@ const EditBoardPage: React.FC = () => {
                 value={boardTitle}
                 onChange={(e) => setBoardTitle(e.target.value)}
                 placeholder="e.g. Marketing Campaign 2025"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                 required
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -216,7 +216,7 @@ const EditBoardPage: React.FC = () => {
                 onChange={(e) => setBoardDescription(e.target.value)}
                 placeholder="Add details about this board's purpose and goals..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-black-700 text-gray-900 dark:text-white"
               />
             </div>
 
@@ -288,9 +288,9 @@ const EditBoardPage: React.FC = () => {
             </div>
 
             {/* Preview */}
-            <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700/30">
+            <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-black-50 dark:bg-black-700/30">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Preview</h3>
-              <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-black-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className={`h-20 bg-gradient-to-r ${selectedBackground} relative`}>
                   {/* Board title overlay */}
                   <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/40 to-transparent">
@@ -319,7 +319,7 @@ const EditBoardPage: React.FC = () => {
             <div className="flex justify-end gap-3 pt-4">
               <Link
                 href={`/boards/${boardId}`}
-                className="px-5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="px-5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black-100 dark:hover:bg-black-700 transition-colors"
               >
                 Cancel
               </Link>

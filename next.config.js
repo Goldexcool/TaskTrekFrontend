@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    esmExternals: 'loose',
-  },
   webpack: (config, { isServer }) => {
     // Handle client-side module resolution
     if (!isServer) {
@@ -19,7 +15,6 @@ const nextConfig = {
     return config;
   },
   transpilePackages: ['framer-motion'],
-  swcMinify: true,
 };
 
 module.exports = nextConfig;

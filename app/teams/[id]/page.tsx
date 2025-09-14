@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { fetchTeam, Team, TeamMember as ImportedTeamMember } from '../../store/teamService';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import ErrorMessage from '@/app/components/ErrorMessage';
+import AppLayout from '@/app/components/AppLayout';
 import { Clock, Users, Shield, Settings, Plus, Layout, List, ArrowRight, Clipboard } from 'react-feather';
 import {
   Home, ArrowLeft, Edit, ChevronRight, Activity, Calendar,
@@ -979,7 +980,7 @@ const TeamDetailsPage: React.FC = () => {
             <p className="mt-6 text-gray-600 dark:text-gray-400">
               Loading team details...
             </p>
-            <div className="mt-4 w-64 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="mt-4 w-64 h-2 bg-black-200 dark:bg-black-700 rounded-full overflow-hidden">
               <div className="h-full bg-indigo-500 rounded-full animate-pulse" style={{ width: '70%' }}></div>
             </div>
           </div>
@@ -1000,7 +1001,7 @@ const TeamDetailsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950/40">
         <div className="container mx-auto px-4 py-8">
-          <div className="bg-white  shadow-sm rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
+          <div className="shadow-sm rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center backdrop-blur-sm bg-white/50 dark:bg-black-800/50">
             <div className="text-red-500 mb-4">
               <svg className="h-16 w-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -1036,10 +1037,11 @@ const TeamDetailsPage: React.FC = () => {
   const avatarStyle = getAvatarStyle(team.name);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950/40">
+    <AppLayout>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950/40">
       {/* Futuristic header with parallax effect */}
       <motion.div
-        className="sticky top-0 z-40 bg-gradient-to-r from-indigo-600 via-blue-500 to-purple-600 relative overflow-hidden"
+        className="sticky top-0 z-40 bg-gradient-to-r from-indigo-600 via-blue-500 to-purple-600 overflow-hidden"
         style={{
           opacity: headerOpacity,
           scale: headerScale,
@@ -1193,7 +1195,7 @@ const TeamDetailsPage: React.FC = () => {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {/* Board Count */}
-              <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
+              <div className="shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-black-800/50">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mr-4">
                     <Layout className="h-6 w-6" />
@@ -1206,7 +1208,7 @@ const TeamDetailsPage: React.FC = () => {
               </div>
 
               {/* Task Count */}
-              <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
+              <div className="shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-black-800/50">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mr-4">
                     <Clipboard className="h-6 w-6" />
@@ -1224,7 +1226,7 @@ const TeamDetailsPage: React.FC = () => {
               </div>
 
               {/* Team Members */}
-              <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
+              <div className="shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-black-800/50">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mr-4">
                     <Users className="h-6 w-6" />
@@ -1242,7 +1244,7 @@ const TeamDetailsPage: React.FC = () => {
               </div>
 
               {/* Tasks per Member */}
-              <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
+              <div className="shadow-md rounded-xl p-4 border border-gray-100 dark:border-gray-700 backdrop-blur-sm bg-white/50 dark:bg-black-800/50">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 mr-4">
                     <BarChart2 className="h-6 w-6" />
@@ -1294,9 +1296,9 @@ const TeamDetailsPage: React.FC = () => {
           variants={fadeInVariants}
           className="mb-12 mt-6"
         >
-          <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden backdrop-blur-sm bg-white/80 dark:bg-gray-800/80">
+          <div className="shadow-xl rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden backdrop-blur-sm bg-white/80 dark:bg-black-800/80">
             {/* Board header */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-black-50 dark:bg-black-800/50 border-b border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h2 className="text-xl sm:text-2xl font-bold flex items-center text-gray-900 dark:text-white">
                   <Layout className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-indigo-500" />
@@ -1324,7 +1326,7 @@ const TeamDetailsPage: React.FC = () => {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search boards"
-                      className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm w-full bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                       aria-label="Search boards"
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') {
@@ -1346,7 +1348,7 @@ const TeamDetailsPage: React.FC = () => {
                   <select
                     value={activeTab}
                     onChange={(e) => setActiveTab(e.target.value)}
-                    className="sm:hidden px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="sm:hidden px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                   >
                     <option value="all">All Boards</option>
                     <option value="starred">Starred</option>
@@ -1361,16 +1363,16 @@ const TeamDetailsPage: React.FC = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSortBy('updated')} className={sortBy === 'updated' ? "bg-gray-100 dark:bg-gray-800" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy('updated')} className={sortBy === 'updated' ? "bg-black-100 dark:bg-black-800" : ""}>
                         Recently Updated
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy('created')} className={sortBy === 'created' ? "bg-gray-100 dark:bg-gray-800" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy('created')} className={sortBy === 'created' ? "bg-black-100 dark:bg-black-800" : ""}>
                         Recently Created
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy('name')} className={sortBy === 'name' ? "bg-gray-100 dark:bg-gray-800" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy('name')} className={sortBy === 'name' ? "bg-black-100 dark:bg-black-800" : ""}>
                         Alphabetical
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy('activity')} className={sortBy === 'activity' ? "bg-gray-100 dark:bg-gray-800" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy('activity')} className={sortBy === 'activity' ? "bg-black-100 dark:bg-black-800" : ""}>
                         Most Active
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -1385,7 +1387,7 @@ const TeamDetailsPage: React.FC = () => {
                             onClick={() => setViewMode(BoardViewMode.Grid)}
                             className={`p-2 ${viewMode === BoardViewMode.Grid
                               ? 'bg-indigo-500 text-white'
-                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                              : 'bg-white dark:bg-black-700 text-gray-700 dark:text-gray-300'}`}
                             aria-label="Grid view"
                           >
                             <Grid3X3 className="h-4 w-4" />
@@ -1402,7 +1404,7 @@ const TeamDetailsPage: React.FC = () => {
                             onClick={() => setViewMode(BoardViewMode.List)}
                             className={`p-2 ${viewMode === BoardViewMode.List
                               ? 'bg-indigo-500 text-white'
-                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                              : 'bg-white dark:bg-black-700 text-gray-700 dark:text-gray-300'}`}
                             aria-label="List view"
                           >
                             <List className="h-4 w-4" />
@@ -1419,7 +1421,7 @@ const TeamDetailsPage: React.FC = () => {
                             onClick={() => setViewMode(BoardViewMode.Compact)}
                             className={`p-2 ${viewMode === BoardViewMode.Compact
                               ? 'bg-indigo-500 text-white'
-                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                              : 'bg-white dark:bg-black-700 text-gray-700 dark:text-gray-300'}`}
                             aria-label="Compact view"
                           >
                             <LayoutGrid className="h-4 w-4" />
@@ -1434,7 +1436,7 @@ const TeamDetailsPage: React.FC = () => {
                   <select
                     value={viewMode}
                     onChange={(e) => setViewMode(e.target.value as BoardViewMode)}
-                    className="sm:hidden px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="sm:hidden px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                   >
                     <option value={BoardViewMode.Grid}>Grid</option>
                     <option value={BoardViewMode.List}>List</option>
@@ -1484,7 +1486,7 @@ const TeamDetailsPage: React.FC = () => {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+                    <div className="mb-6 bg-black-50 dark:bg-black-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Create New Board</h3>
 
                       <div className="space-y-4">
@@ -1498,7 +1500,7 @@ const TeamDetailsPage: React.FC = () => {
                             value={newBoardTitle}
                             onChange={(e) => setNewBoardTitle(e.target.value)}
                             placeholder="Enter board name"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                             required
                           />
                         </div>
@@ -1512,7 +1514,7 @@ const TeamDetailsPage: React.FC = () => {
                             value={newBoardDescription}
                             onChange={(e) => setNewBoardDescription(e.target.value)}
                             placeholder="Enter board description"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-20 resize-none"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white h-20 resize-none"
                           />
                         </div>
 
@@ -1592,7 +1594,7 @@ const TeamDetailsPage: React.FC = () => {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+                    <div className="mb-6 bg-black-50 dark:bg-black-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Edit Board</h3>
 
                       <div className="space-y-4">
@@ -1606,7 +1608,7 @@ const TeamDetailsPage: React.FC = () => {
                             value={editBoardTitle}
                             onChange={(e) => setEditBoardTitle(e.target.value)}
                             placeholder="Enter board name"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white"
                             required
                           />
                         </div>
@@ -1620,7 +1622,7 @@ const TeamDetailsPage: React.FC = () => {
                             value={editBoardDescription}
                             onChange={(e) => setEditBoardDescription(e.target.value)}
                             placeholder="Enter board description"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-20 resize-none"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-white h-20 resize-none"
                           />
                         </div>
 
@@ -1684,7 +1686,7 @@ const TeamDetailsPage: React.FC = () => {
                 <div className="py-12 text-center">
                   {boards.length === 0 ? (
                     <>
-                      <div className="mx-auto h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                      <div className="mx-auto h-16 w-16 rounded-full bg-black-100 dark:bg-black-800 flex items-center justify-center mb-4">
                         <Layout className="h-8 w-8 text-gray-400" />
                       </div>
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No boards yet</h3>
@@ -1701,7 +1703,7 @@ const TeamDetailsPage: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <div className="mx-auto h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                      <div className="mx-auto h-16 w-16 rounded-full bg-black-100 dark:bg-black-800 flex items-center justify-center mb-4">
                         <Search className="h-8 w-8 text-gray-400" />
                       </div>
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No matching boards</h3>
@@ -1749,7 +1751,7 @@ const TeamDetailsPage: React.FC = () => {
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="secondary" size="icon" className="h-7 w-7 bg-white dark:bg-gray-800 shadow-sm">
+                                <Button variant="secondary" size="icon" className="h-7 w-7 bg-white dark:bg-black-800 shadow-sm">
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -1786,11 +1788,11 @@ const TeamDetailsPage: React.FC = () => {
 
                   {/* List View */}
                   {viewMode === BoardViewMode.List && (
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="bg-white dark:bg-black-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700">
+                            <tr className="bg-black-50 dark:bg-black-800/60 border-b border-gray-200 dark:border-gray-700">
                               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Board</th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tasks</th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Updated</th>
@@ -1804,7 +1806,7 @@ const TeamDetailsPage: React.FC = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.03 }}
-                                className={`${deletingBoardId === board._id ? 'opacity-60' : ''} hover:bg-gray-50 dark:hover:bg-gray-800/70`}
+                                className={`${deletingBoardId === board._id ? 'opacity-60' : ''} hover:bg-black-50 dark:hover:bg-black-800/70`}
                               >
                                 <td className="px-4 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
@@ -1882,7 +1884,7 @@ const TeamDetailsPage: React.FC = () => {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.05 }}
-                          className={`${deletingBoardId === board._id ? 'opacity-60' : ''} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow`}
+                          className={`${deletingBoardId === board._id ? 'opacity-60' : ''} bg-white dark:bg-black-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow`}
                         >
                           <div className="flex items-center p-3">
                             <div 
@@ -1972,7 +1974,7 @@ const TeamDetailsPage: React.FC = () => {
           
           <div className="mt-6">
             {/* Invite member form */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
+            <div className="bg-black-50 dark:bg-black-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
               <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-3">
                 Invite New Members
               </h3>
@@ -1988,7 +1990,7 @@ const TeamDetailsPage: React.FC = () => {
                     value={newMemberEmail}
                     onChange={(e) => setNewMemberEmail(e.target.value)}
                     placeholder="colleague@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-gray-100"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && validateEmail(newMemberEmail)) {
                         e.preventDefault();
@@ -2008,7 +2010,7 @@ const TeamDetailsPage: React.FC = () => {
                     id="memberRole"
                     value={newMemberRole}
                     onChange={(e) => setNewMemberRole(e.target.value as 'member' | 'admin')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-black-700 text-gray-900 dark:text-gray-100"
                   >
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
@@ -2058,7 +2060,7 @@ const TeamDetailsPage: React.FC = () => {
                       return (
                         <div 
                           key={userData.id} 
-                          className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-white dark:bg-black-800 border border-gray-200 dark:border-gray-700 rounded-lg"
                         >
                           <div className="flex items-center">
                             <div className={`h-10 w-10 rounded-full ${avatarStyle.bg} flex items-center justify-center mr-3`}>
@@ -2155,7 +2157,7 @@ const TeamDetailsPage: React.FC = () => {
                     })
                   ) : (
                     <div className="text-center py-8">
-                      <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+                      <div className="mx-auto h-12 w-12 rounded-full bg-black-100 dark:bg-black-800 flex items-center justify-center mb-3">
                         <Users className="h-6 w-6 text-gray-400" />
                       </div>
                       <p className="text-gray-500 dark:text-gray-400">No team members yet</p>
@@ -2174,7 +2176,7 @@ const TeamDetailsPage: React.FC = () => {
                     {pendingInvites.map((invite, index) => (
                       <div 
                         key={invite.id || invite._id || index}
-                        className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-white dark:bg-black-800 border border-gray-200 dark:border-gray-700 rounded-lg"
                       >
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mr-3">
@@ -2242,7 +2244,7 @@ const TeamDetailsPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+                    <div className="mx-auto h-12 w-12 rounded-full bg-black-100 dark:bg-black-800 flex items-center justify-center mb-3">
                       <Mail className="h-6 w-6 text-gray-400" />
                     </div>
                     <p className="text-gray-500 dark:text-gray-400">No pending invitations</p>
@@ -2277,6 +2279,7 @@ const TeamDetailsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </AppLayout>
   );
 };
 
