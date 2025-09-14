@@ -13,9 +13,9 @@ const CtaSection = () => {
   ];
 
   return (
-    <section className="py-20 sm:py-32 bg-white dark:bg-black relative overflow-hidden">
+    <section className="py-20 sm:py-32 bg-black dark:bg-black relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20" />
+      <div className="absolute inset-0 bg-black" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div
@@ -41,7 +41,7 @@ const CtaSection = () => {
           </h2>
 
           {/* Description */}
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed">
             Join thousands of teams who have already transformed their workflow. 
             Start your free trial and experience the difference TaskTrek makes.
           </p>
@@ -57,7 +57,7 @@ const CtaSection = () => {
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-center justify-center text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-600 dark:text-gray-400">{benefit}</span>
+                <span className="text-white/70">{benefit}</span>
               </div>
             ))}
           </motion.div>
@@ -78,7 +78,7 @@ const CtaSection = () => {
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             
-            <button className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 text-black dark:text-white rounded-lg font-semibold text-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+            <button className="px-8 py-4 border-2 border-white/20 text-white rounded-lg font-semibold text-lg hover:border-white/40 transition-colors">
               Watch Demo
             </button>
           </motion.div>
@@ -96,7 +96,7 @@ const CtaSection = () => {
                 <Users className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
                 <span className="text-2xl font-bold text-black dark:text-white">50K+</span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
+              <p className="text-sm text-white/70">Active Users</p>
             </div>
             
             <div className="text-center">
@@ -104,7 +104,7 @@ const CtaSection = () => {
                 <Star className="h-5 w-5 text-yellow-500 mr-2" />
                 <span className="text-2xl font-bold text-black dark:text-white">4.9/5</span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">User Rating</p>
+              <p className="text-sm text-white/70">User Rating</p>
             </div>
             
             <div className="text-center">
@@ -112,7 +112,7 @@ const CtaSection = () => {
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                 <span className="text-2xl font-bold text-black dark:text-white">99.9%</span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Uptime</p>
+              <p className="text-sm text-white/70">Uptime</p>
             </div>
           </motion.div>
 
@@ -124,20 +124,20 @@ const CtaSection = () => {
             viewport={{ once: true }}
             className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800"
           >
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-sm text-white/60 mb-4">
               Trusted by teams at
             </p>
             <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
-              <div className="bg-black-200 dark:bg-black-700 px-6 py-2 rounded text-sm font-medium text-gray-600 dark:text-gray-300">
+              <div className="bg-white/10 px-6 py-2 rounded text-sm font-medium text-white/70">
                 TechCorp
               </div>
-              <div className="bg-black-200 dark:bg-black-700 px-6 py-2 rounded text-sm font-medium text-gray-600 dark:text-gray-300">
+              <div className="bg-white/10 px-6 py-2 rounded text-sm font-medium text-white/70">
                 StartupXYZ
               </div>
-              <div className="bg-black-200 dark:bg-black-700 px-6 py-2 rounded text-sm font-medium text-gray-600 dark:text-gray-300">
+              <div className="bg-white/10 px-6 py-2 rounded text-sm font-medium text-white/70">
                 InnovateCo
               </div>
-              <div className="bg-black-200 dark:bg-black-700 px-6 py-2 rounded text-sm font-medium text-gray-600 dark:text-gray-300">
+              <div className="bg-white/10 px-6 py-2 rounded text-sm font-medium text-white/70">
                 BuildTech
               </div>
             </div>

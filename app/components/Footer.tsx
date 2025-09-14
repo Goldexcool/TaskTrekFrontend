@@ -68,7 +68,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800">
+    <footer className="bg-black border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main footer content */}
         <div className="py-16">
@@ -85,9 +85,9 @@ const Footer = () => {
                   <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
                     <span className="text-white font-bold text-lg">T</span>
                   </div>
-                  <span className="text-2xl font-bold text-black dark:text-white">TaskTrek</span>
+                  <span className="text-2xl font-bold text-white">TaskTrek</span>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                <p className="text-white/70 mb-6 leading-relaxed">
                   Empowering teams to collaborate, organize, and achieve more together. 
                   The project management tool that grows with your business.
                 </p>
@@ -100,7 +100,7 @@ const Footer = () => {
                       <Link
                         key={index}
                         href={item.href}
-                        className="flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                        className="flex items-center text-white/70 hover:text-blue-400 transition-colors group"
                       >
                         <Icon className="h-4 w-4 mr-3" />
                         <span className="text-sm">{item.text}</span>
@@ -123,7 +123,7 @@ const Footer = () => {
                     transition={{ duration: 0.6, delay: index * 0.1 }}
                     viewport={{ once: true }}
                   >
-                    <h3 className="text-sm font-bold text-black dark:text-white uppercase tracking-wider mb-4">
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
                       {section.title}
                     </h3>
                     <ul className="space-y-3">
@@ -131,7 +131,7 @@ const Footer = () => {
                         <li key={linkIndex}>
                           <Link
                             href={link.href}
-                            className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm"
+                            className="text-white/70 hover:text-blue-400 transition-colors text-sm"
                           >
                             {link.name}
                           </Link>
@@ -151,14 +151,14 @@ const Footer = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="py-8 border-t border-gray-200 dark:border-gray-800"
+          className="py-8 border-t border-gray-800"
         >
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
-              <h4 className="text-lg font-semibold text-black dark:text-white mb-2">
+              <h4 className="text-lg font-semibold text-white mb-2">
                 Stay updated
               </h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+              <p className="text-white/70 text-sm">
                 Get the latest updates, tips, and insights delivered to your inbox.
               </p>
             </div>
@@ -166,7 +166,7 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-black-900 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 flex-1 lg:w-64"
+                className="px-4 py-2 border border-gray-600 rounded-lg bg-gray-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 flex-1 lg:w-64"
               />
               <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap">
                 Subscribe
@@ -176,9 +176,9 @@ const Footer = () => {
         </motion.div>
 
         {/* Bottom section */}
-        <div className="py-8 border-t border-gray-200 dark:border-gray-800">
+        <div className="py-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
+            <p className="text-white/60 text-sm">
               © {new Date().getFullYear()} TaskTrek. All rights reserved.
             </p>
             
@@ -186,7 +186,7 @@ const Footer = () => {
             <div className="flex space-x-4">
               <Link 
                 href="#" 
-                className="w-10 h-10 bg-black-100 dark:bg-black-800 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-black-200 dark:hover:bg-black-700 transition-all"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-white/70 hover:text-blue-400 hover:bg-gray-700 transition-all"
                 aria-label="Twitter"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -196,7 +196,7 @@ const Footer = () => {
               
               <Link 
                 href="#" 
-                className="w-10 h-10 bg-black-100 dark:bg-black-800 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-black-200 dark:hover:bg-black-700 transition-all"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-white/70 hover:text-blue-400 hover:bg-gray-700 transition-all"
                 aria-label="LinkedIn"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -206,7 +206,7 @@ const Footer = () => {
               
               <Link 
                 href="#" 
-                className="w-10 h-10 bg-black-100 dark:bg-black-800 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-black-200 dark:hover:bg-black-700 transition-all"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-white/70 hover:text-blue-400 hover:bg-gray-700 transition-all"
                 aria-label="GitHub"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -216,7 +216,7 @@ const Footer = () => {
               
               <Link 
                 href="#" 
-                className="w-10 h-10 bg-black-100 dark:bg-black-800 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-black-200 dark:hover:bg-black-700 transition-all"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-white/70 hover:text-blue-400 hover:bg-gray-700 transition-all"
                 aria-label="Discord"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">

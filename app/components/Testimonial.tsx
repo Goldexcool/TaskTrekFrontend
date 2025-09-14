@@ -96,7 +96,7 @@ export default function Testimonials() {
             <br />
             <span className="text-green-600 dark:text-green-400">worldwide</span>
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          <p className="text-xl text-white/80 max-w-3xl mx-auto">
             Join thousands of teams who have transformed their workflow with TaskTrek
           </p>
         </motion.div>
@@ -117,13 +117,13 @@ export default function Testimonials() {
                 variants={itemVariants}
                 className="text-center"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-white dark:bg-black-900 rounded-xl flex items-center justify-center shadow-lg dark:shadow-gray-900/20">
+                <div className="w-12 h-12 mx-auto mb-4 bg-black dark:bg-black-900 rounded-xl flex items-center justify-center shadow-lg dark:shadow-gray-900/20">
                   <Icon className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-bold text-black dark:text-white mb-2">
                   {stat.value}
                 </div>
-                <div className="text-gray-600 dark:text-gray-400 text-sm">
+                <div className="text-white/70 text-sm">
                   {stat.label}
                 </div>
               </motion.div>
@@ -143,7 +143,7 @@ export default function Testimonials() {
             <motion.div
               key={index}
               variants={itemVariants}
-              className="bg-white dark:bg-black-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/20 hover:shadow-xl dark:hover:shadow-gray-900/30 transition-all duration-300 border border-gray-200 dark:border-gray-800"
+              className="bg-black dark:bg-black-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/20 hover:shadow-xl dark:hover:shadow-gray-900/30 transition-all duration-300 border border-gray-200 dark:border-gray-800"
             >
               {/* Quote Icon */}
               <div className="w-10 h-10 bg-green-100 dark:bg-green-950/50 rounded-lg flex items-center justify-center mb-6">
@@ -158,7 +158,7 @@ export default function Testimonials() {
               </div>
 
               {/* Content */}
-              <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+              <p className="text-white/70 mb-6 leading-relaxed">
                 &ldquo;{testimonial.content}&rdquo;
               </p>
 
@@ -183,7 +183,7 @@ export default function Testimonials() {
                   <h4 className="font-semibold text-black dark:text-white">
                     {testimonial.name}
                   </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-white/60">
                     {testimonial.role} at {testimonial.company}
                   </p>
                 </div>
@@ -198,12 +198,12 @@ export default function Testimonials() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
-          className="text-center mt-16 bg-white dark:bg-black-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/20 border border-gray-200 dark:border-gray-800"
+          className="text-center mt-16 bg-black dark:bg-black-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/20 border border-gray-200 dark:border-gray-800"
         >
           <h3 className="text-2xl font-bold text-black dark:text-white mb-4">
             Ready to join them?
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-white/70 mb-6">
             Start your free trial today and see why teams choose TaskTrek
           </p>
           <button className="inline-flex items-center px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl">

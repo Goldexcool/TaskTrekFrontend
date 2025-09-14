@@ -87,7 +87,7 @@ const Pricing = () => {
   };
 
   return (
-    <section id="pricing" className="py-20 sm:py-32 bg-white dark:bg-black">
+    <section id="pricing" className="py-20 sm:py-32 bg-black dark:bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -106,7 +106,7 @@ const Pricing = () => {
             <br />
             <span className="text-blue-600 dark:text-blue-400">for your team</span>
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-8">
+          <p className="text-xl text-white/80 max-w-3xl mx-auto mb-8">
             Start free and scale as you grow. All plans include our core features with no hidden fees.
           </p>
 
@@ -116,8 +116,8 @@ const Pricing = () => {
               onClick={() => setIsAnnual(false)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 !isAnnual
-                  ? 'bg-white dark:bg-black-800 text-black dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400'
+                  ? 'bg-black dark:bg-black-800 text-black dark:text-white shadow-sm'
+                  : 'text-white/70'
               }`}
             >
               Monthly
@@ -126,8 +126,8 @@ const Pricing = () => {
               onClick={() => setIsAnnual(true)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 isAnnual
-                  ? 'bg-white dark:bg-black-800 text-black dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400'
+                  ? 'bg-black dark:bg-black-800 text-black dark:text-white shadow-sm'
+                  : 'text-white/70'
               }`}
             >
               Annual
@@ -154,7 +154,7 @@ const Pricing = () => {
               <motion.div
                 key={index}
                 variants={itemVariants}
-                className={`relative bg-white dark:bg-black-900 rounded-2xl border-2 p-8 ${
+                className={`relative bg-black dark:bg-black-900 rounded-2xl border-2 p-8 ${
                   plan.popular
                     ? 'border-blue-500 dark:border-blue-400 shadow-lg dark:shadow-blue-900/20'
                     : 'border-gray-200 dark:border-gray-800'
@@ -181,14 +181,14 @@ const Pricing = () => {
                   <h3 className="text-xl font-bold text-black dark:text-white mb-2">
                     {plan.name}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  <p className="text-white/70 mb-6">
                     {plan.description}
                   </p>
                   <div className="mb-6">
                     <span className="text-4xl font-bold text-black dark:text-white">
                       ${price}
                     </span>
-                    <span className="text-gray-600 dark:text-gray-400 ml-1">
+                    <span className="text-white/70 ml-1">
                       {price > 0 ? `/user/${isAnnual ? 'year' : 'month'}` : ''}
                     </span>
                   </div>
@@ -198,7 +198,7 @@ const Pricing = () => {
                   {plan.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-center">
                       <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                      <span className="text-gray-600 dark:text-gray-400">{feature}</span>
+                      <span className="text-white/70">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -225,7 +225,7 @@ const Pricing = () => {
           viewport={{ once: true }}
           className="text-center mt-16"
         >
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-white/70 mb-6">
             All plans include a 14-day free trial. No credit card required.
           </p>
           <button className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors group">

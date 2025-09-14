@@ -36,7 +36,7 @@ const Hero = () => {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl sm:text-2xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed">
               TaskTrek is the all-in-one workspace where teams plan, track, and deliver outstanding work together.
             </p>
 
@@ -49,22 +49,22 @@ const Hero = () => {
                 Start for free
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button className="w-full sm:w-auto bg-transparent border-2 border-gray-300 dark:border-gray-700 text-black dark:text-white py-4 px-8 rounded-lg font-semibold hover:border-blue-600 dark:hover:border-blue-400 transition-all flex items-center justify-center group">
+              <button className="w-full sm:w-auto bg-transparent border-2 border-white/30 text-white py-4 px-8 rounded-lg font-semibold hover:border-blue-400 transition-all flex items-center justify-center group">
                 <Play className="mr-2 h-5 w-5" />
                 Watch demo
               </button>
             </div>
 
             {/* Social proof */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-white/70">
               <div className="flex items-center">
                 <div className="flex -space-x-2 mr-3">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="w-8 h-8 bg-black-300 dark:bg-black-700 rounded-full border-2 border-white dark:border-black flex items-center justify-center"
+                      className="w-8 h-8 bg-gray-800 rounded-full border-2 border-gray-700 flex items-center justify-center"
                     >
-                      <Users className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      <Users className="h-4 w-4 text-white/60" />
                     </div>
                   ))}
                 </div>

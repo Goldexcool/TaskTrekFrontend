@@ -118,7 +118,7 @@ const Features = () => {
             <br />
             <span className="text-blue-600 dark:text-blue-400">manage work better</span>
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          <p className="text-xl text-white/80 max-w-3xl mx-auto">
             From simple task tracking to complex project management, TaskTrek provides all the tools your team needs to stay organized and productive.
           </p>
         </motion.div>
@@ -146,7 +146,7 @@ const Features = () => {
               <motion.div
                 key={index}
                 variants={itemVariants}
-                className="bg-white dark:bg-black-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 hover:shadow-lg dark:hover:shadow-gray-900/20 transition-all duration-300 group hover:border-blue-300 dark:hover:border-blue-700"
+                className="bg-black dark:bg-black-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 hover:shadow-lg dark:hover:shadow-gray-900/20 transition-all duration-300 group hover:border-blue-300 dark:hover:border-blue-700"
               >
                 <div className={`w-12 h-12 rounded-xl ${colorClasses[feature.color as keyof typeof colorClasses]} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                   <Icon className="h-6 w-6" />
@@ -154,7 +154,7 @@ const Features = () => {
                 <h3 className="text-xl font-semibold text-black dark:text-white mb-4">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="text-white/70 leading-relaxed">
                   {feature.description}
                 </p>
               </motion.div>
@@ -168,13 +168,13 @@ const Features = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="bg-white dark:bg-black-900 rounded-2xl p-8 sm:p-12 border border-gray-200 dark:border-gray-800"
+          className="bg-black dark:bg-black-900 rounded-2xl p-8 sm:p-12 border border-gray-200 dark:border-gray-800"
         >
           <div className="text-center mb-12">
             <h3 className="text-2xl sm:text-3xl font-bold text-black dark:text-white mb-4">
               And so much more
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
+            <p className="text-white/70 text-lg">
               Discover additional features that make TaskTrek the complete solution for your team
             </p>
           </div>
@@ -184,13 +184,13 @@ const Features = () => {
               const Icon = feature.icon;
               return (
                 <div key={index} className="text-center">
-                  <div className="w-12 h-12 bg-black-100 dark:bg-black-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Icon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Icon className="h-6 w-6 text-white/70" />
                   </div>
-                  <h4 className="font-semibold text-black dark:text-white mb-2">
+                  <h4 className="font-semibold text-white mb-2">
                     {feature.title}
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-white/60">
                     {feature.description}
                   </p>
                 </div>
